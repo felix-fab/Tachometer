@@ -1,0 +1,39 @@
+.clock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  text-align: center;
+  align-items: center;
+}
+
+.time {
+  font-size: clamp(2.5rem, 9vh, 5rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.date {
+  font-size: clamp(1.1rem, 3vh, 1.6rem);
+  font-weight: 500;
+  color: var(--muted);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .clock {
+    animation: clockFade 0.4s ease-out;
+  }
+
+  @keyframes clockFade {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}

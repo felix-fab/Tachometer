@@ -1,0 +1,15 @@
+[Unit]
+Description=Tachometer Dashboard Server (Express)
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/tachometer
+EnvironmentFile=/home/pi/tachometer/server/.env
+ExecStart=/usr/bin/node /home/pi/tachometer/server/src/index.js
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

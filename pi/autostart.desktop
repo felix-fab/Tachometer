@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Tachometer Dashboard
+Comment=Öffnet das Dashboard im Kiosk-Modus
+Exec=/home/pi/tachometer/pi/kiosk.sh
+X-GNOME-Autostart-enabled=true

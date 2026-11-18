@@ -1,0 +1,333 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  text-align: left;
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  align-self: stretch;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+  animation: dotPulse 2s ease-in-out infinite;
+}
+
+@keyframes dotPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 6px var(--accent);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 14px 3px var(--accent);
+    transform: scale(1.15);
+  }
+}
+
+.hint {
+  font-size: 1rem;
+  color: var(--muted);
+}
+
+.hint code {
+  font-size: 0.85rem;
+  background: var(--chip-bg);
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0.1rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  min-height: 0;
+  overflow-y: auto;
+  flex: 1 1 auto;
+}
+
+/* Wrapper keeps the clickable card full-width inside the list item. */
+.taskWrap {
+  width: 100%;
+  min-width: 0;
+}
+
+.task {
+  display: block;
+  width: 100%;
+  text-align: left;
+  color: var(--text);
+  padding: 0.65rem 0.8rem;
+  border-radius: 12px;
+  background: var(--chip-bg);
+  border: 1px solid var(--panel-border);
+  border-left: 3px solid var(--accent);
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    background 0.25s ease,
+    border-color 0.25s ease,
+    transform 0.2s ease,
+    box-shadow 0.25s ease;
+  animation: taskIn 0.4s ease-out both;
+}
+
+.task:hover {
+  background: var(--hover);
+  border-left-color: var(--accent);
+  transform: translateX(3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes taskIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.taskTitle {
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.taskMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.4rem;
+}
+
+.project {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--muted-strong);
+  background: var(--panel-solid);
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+}
+
+.projectDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.due {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.dueIcon {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+
+.dueOverdue {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.error {
+  font-size: 0.9rem;
+  color: var(--danger);
+}
+
+/* ----- Popup (Fullscreen over the dashboard) ----- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 100;
+  display: block;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: 24px;
+}
+
+.popup {
+  position: relative;
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  background: var(--panel-solid);
+  box-shadow: var(--shadow);
+  padding: 1.5rem 2.5rem 3rem;
+  display: block;
+}
+
+/* Sticky top row with the project chip and the close button. */
+.popupTop {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: var(--panel-solid);
+  margin: -1.5rem -2.5rem 1.25rem;
+  padding: 1.25rem 2.5rem;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.popupClose {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  background: var(--chip-bg);
+  border: 1px solid var(--panel-border);
+  font-size: 1.1rem;
+  line-height: 1;
+  transition: background 0.2s ease;
+}
+
+.popupClose:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.popupProject {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--chip-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.popupProjectDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.popupTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.3;
+  padding-right: 2rem;
+  margin-bottom: 1.1rem;
+  overflow-wrap: anywhere;
+}
+
+.popupDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  margin: 0;
+}
+
+.popupRow,
+.popupBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.popupDetails dt {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.popupDetails dd {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--text);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.popupDescription {
+  line-height: 1.5;
+}
+
+.popupLabels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.popupLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--chip-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .panel {
+    animation: panelFade 0.4s ease-out;
+  }
+
+  @keyframes panelFade {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}

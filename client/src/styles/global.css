@@ -1,0 +1,124 @@
+:root {
+  --accent: #e8862a;
+
+  /* Dark theme (default) — a lighter, warmer dark instead of pure black */
+  --bg: #23262e;
+  --bg-gradient-start: #2a2d36;
+  --bg-gradient-end: #1e2128;
+  --bg-glow: rgba(232, 134, 42, 0.1);
+  --panel: rgba(47, 51, 61, 0.72);
+  --panel-solid: #2f333d;
+  --panel-border: rgba(255, 255, 255, 0.09);
+  --text: #f2f4f8;
+  --muted: #a3adbb;
+  --muted-strong: #7d8796;
+  --input-bg: rgba(0, 0, 0, 0.18);
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  --danger: #ef4444;
+  --success: #22c55e;
+  --google: #4285f4;
+  --microsoft: #f25022;
+  --chip-bg: rgba(255, 255, 255, 0.06);
+  --hover: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme='light'] {
+  --bg: #f5f4f2;
+  --bg-gradient-start: #faf5ee;
+  --bg-gradient-end: #eef1f6;
+  --bg-glow: rgba(232, 134, 42, 0.1);
+  --panel: rgba(255, 255, 255, 0.72);
+  --panel-solid: #ffffff;
+  --panel-border: rgba(0, 0, 0, 0.1);
+  --text: #26272b;
+  --muted: #6b7280;
+  --muted-strong: #8a93a3;
+  --input-bg: rgba(0, 0, 0, 0.04);
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --chip-bg: rgba(0, 0, 0, 0.05);
+  --hover: rgba(0, 0, 0, 0.06);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  background-image:
+    radial-gradient(1200px 800px at 20% -10%, var(--bg-glow), transparent 60%),
+    linear-gradient(145deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+  background-attachment: fixed;
+  font-size: 18px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  animation: bgDrift 18s ease-in-out infinite alternate;
+}
+
+@keyframes bgDrift {
+  from {
+    background-position: 0% 0%;
+  }
+  to {
+    background-position: 100% 100%;
+  }
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+/* Focus visible for keyboard / accessibility on touch screens */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
