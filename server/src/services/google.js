@@ -115,11 +115,12 @@ export async function getEvents(calendarIds = [], { maxResults = 30, daysAhead =
   const accessToken = await getValidToken();
   if (!accessToken) throw new Error('google_not_connected');
 
-  // Build a color map from the calendar list (calendarId -> backgroundColor)
+  // Build maps from the calendar list (calendarId -> backgroundColor / name)
   // and the event color palette (colorId -> background), used to resolve each
   // event's display color.
   const calendars = await listCalendars();
   const colorMap = new Map(calendars.map((c) => [c.id, c.backgroundColor]));
+  const nameMap = new Map(calendars.map((c) => [c.id, c.summary]));
   const eventColors = await getEventColors();
 
   const ids =
@@ -155,6 +156,7 @@ export async function getEvents(calendarIds = [], { maxResults = 30, daysAhead =
           id: `google:${ev.id}`,
           source: 'google',
           calendarId: id,
+          calendarName: nameMap.get(id) || null,
           color: eventColor || colorMap.get(id) || '#4285f4',
           summary: ev.summary || '(Ohne Titel)',
           location: ev.location || null,

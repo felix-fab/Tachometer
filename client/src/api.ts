@@ -106,7 +106,7 @@ export function fetchAuthStatus(): Promise<AuthStatus> {
 }
 
 /** POST /api/auth/:provider/disconnect */
-export async function disconnectProvider(provider: 'google' | 'microsoft'): Promise<void> {
+export async function disconnectProvider(provider: 'google'): Promise<void> {
   await request<{ ok: boolean }>(`/auth/${provider}/disconnect`, {
     method: 'POST',
   });
@@ -115,5 +115,4 @@ export async function disconnectProvider(provider: 'google' | 'microsoft'): Prom
 /** OAuth start URLs (navigate directly to them). */
 export const OAUTH_START = {
   google: `${BASE}/auth/google/start`,
-  microsoft: `${BASE}/auth/microsoft/start`,
 } as const;

@@ -73,59 +73,6 @@
   height: 100%;
 }
 
-.settingsButton {
-  position: fixed;
-  bottom: 1.5rem;
-  right: 1.5rem;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--panel);
-  border: 1px solid var(--panel-border);
-  color: var(--accent);
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  transition:
-    background 0.2s ease,
-    transform 0.2s ease,
-    color 0.2s ease;
-  z-index: 10;
-  animation: settingsPulse 3s ease-in-out infinite;
-}
-
-.settingsButton:hover {
-  background: var(--hover);
-  transform: scale(1.08) rotate(90deg);
-  color: var(--accent);
-}
-
-.settingsButton:active {
-  transform: scale(0.94);
-}
-
-@keyframes settingsPulse {
-  0%,
-  100% {
-    box-shadow:
-      0 0 0 0 rgba(255, 255, 255, 0.18),
-      var(--shadow);
-  }
-  50% {
-    box-shadow:
-      0 0 0 8px rgba(255, 255, 255, 0),
-      var(--shadow);
-  }
-}
-
-.settingsButton svg {
-  width: 28px;
-  height: 28px;
-}
-
 .loading {
   height: 100%;
   width: 100%;

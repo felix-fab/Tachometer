@@ -2,7 +2,6 @@ import { Router } from 'express';
 import { getSetting } from '../db.js';
 import { asyncHandler } from '../util.js';
 import * as google from '../services/google.js';
-import * as microsoft from '../services/microsoft.js';
 
 const router = Router();
 
@@ -12,7 +11,7 @@ function mergeAndSort(events) {
     .sort((a, b) => new Date(a.start) - new Date(b.start));
 }
 
-// GET /api/calendar — merged upcoming events from Google + Microsoft
+// GET /api/calendar — upcoming Google events
 router.get(
   '/',
   asyncHandler(async (req, res) => {
@@ -30,20 +29,11 @@ router.get(
       }
     }
 
-    const results = await Promise.allSettled([
-      google.getEvents(googleCalendarIds, { maxResults, daysAhead }),
-      microsoft.getEvents({ maxResults, daysAhead }),
-    ]);
+    const googleEvents = await google.getEvents(googleCalendarIds, { maxResults, daysAhead });
 
-    const googleEvents = results[0].status === 'fulfilled' ? results[0].value : [];
-    const microsoftEvents = results[1].status === 'fulfilled' ? results[1].value : [];
-    const errors = results
-      .filter((r) => r.status === 'rejected')
-      .map((r) => r.reason.message);
+    const events = mergeAndSort(googleEvents).slice(0, maxResults);
 
-    const events = mergeAndSort([...googleEvents, ...microsoftEvents]).slice(0, maxResults);
-
-    res.json({ events, errors });
+    res.json({ events, errors: [] });
   })
 );
 

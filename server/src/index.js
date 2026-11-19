@@ -57,7 +57,7 @@ if (fs.existsSync(clientDist)) {
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
   const status = err.status || 500;
-  const known = ['google_not_connected', 'microsoft_not_connected', 'vikunja_not_configured'];
+  const known = ['google_not_connected', 'vikunja_not_configured'];
   if (known.includes(err.message)) {
     return res.status(502).json({ error: err.message });
   }

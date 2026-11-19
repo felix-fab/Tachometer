@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { fetchMonitor } from '../../api';
 import type { MonitorResponse } from '../../types';
+import { REFRESH } from '../../constants';
 import styles from './Stats.module.css';
-
-const POLL_INTERVAL_MS = 60_000;
 
 /** Format a balance with its currency, e.g. "12.34 USD". */
 function formatBalance(balance: number | null, currency?: string): string {
@@ -50,7 +49,7 @@ export default function Stats() {
 
   useEffect(() => {
     void load();
-    const id = window.setInterval(() => void load(), POLL_INTERVAL_MS);
+    const id = window.setInterval(() => void load(), REFRESH.monitorMs);
     return () => window.clearInterval(id);
   }, [load]);
 
@@ -58,12 +57,22 @@ export default function Stats() {
   const websites = data?.websites ?? [];
   const reachableCount = websites.filter((w) => w.reachable).length;
 
+  // EdenAI display configuration (defaults if not present).
+  const edenaiDisplay = edenai?.display ?? { values: ['balance'], periodDays: 30 };
+  const balance = edenai?.balanceData ?? null;
+  const usage = edenai?.usageData ?? null;
+
+  // EdenAI is "configured" if a management key is set and we have at least one value.
+  const edenaiConfigured =
+    (balance?.configured === true && !balance.error) ||
+    (usage !== null && !usage.error);
+
   return (
     <div className={styles.page}>
       <header className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>Stats &amp; Status</h1>
         <p className={styles.pageSubtitle}>
-          EdenAI-Guthaben und Erreichbarkeit deiner Webseiten
+          EdenAI-Daten und Erreichbarkeit deiner Webseiten
         </p>
       </header>
 
@@ -72,33 +81,68 @@ export default function Stats() {
       )}
 
       <div className={styles.grid}>
-        {/* EdenAI credit balance */}
+        {/* EdenAI stats */}
         <section className={styles.card}>
           <div className={styles.cardHeader}>
             <span className={styles.cardDot} style={{ background: 'var(--accent)' }} />
-            <h2 className={styles.cardTitle}>EdenAI Guthaben</h2>
+            <h2 className={styles.cardTitle}>EdenAI</h2>
           </div>
 
           {loading && !data ? (
             <p className={styles.empty}>Lädt…</p>
-          ) : !edenai || !edenai.configured ? (
+          ) : !edenaiConfigured ? (
             <div className={styles.unconfigured}>
-              <p className={styles.empty}>
-                EdenAI ist nicht konfiguriert.
-              </p>
+              <p className={styles.empty}>EdenAI ist nicht konfiguriert.</p>
               <p className={styles.hint}>
-                Trage <code>EDENAI_MANAGEMENT_KEY</code> in die{' '}
-                <code>server/.env</code> ein.
+                Trage einen EdenAI-Key unter{' '}
+                <strong>Einstellungen → Stats &amp; Monitoring</strong> ein.
               </p>
             </div>
-          ) : edenai.error ? (
-            <p className={styles.error}>{edenai.error}</p>
           ) : (
-            <div className={styles.balance}>
-              <span className={styles.balanceValue}>
-                {formatBalance(edenai.balance, edenai.currency)}
-              </span>
-              <span className={styles.balanceLabel}>verfügbares Guthaben</span>
+            <div className={styles.balanceList}>
+              {balance && balance.error && (
+                <p className={styles.error}>{balance.error}</p>
+              )}
+              {usage && usage.error && (
+                <p className={styles.error}>{usage.error}</p>
+              )}
+
+              {edenaiDisplay.values.includes('balance') &&
+                balance?.configured === true &&
+                !balance.error && (
+                  <div className={styles.balanceRow}>
+                    <span className={styles.balanceValue}>
+                      {formatBalance(balance.balance, balance.currency)}
+                    </span>
+                    <span className={styles.balanceLabel}>verfügbares Guthaben</span>
+                  </div>
+                )}
+
+              {edenaiDisplay.values.includes('usage') &&
+                usage?.usage !== undefined &&
+                !usage.error && (
+                  <div className={styles.balanceRow}>
+                    <span className={styles.balanceValue}>
+                      {formatBalance(usage.usage, 'USD')}
+                    </span>
+                    <span className={styles.balanceLabel}>
+                      Verbrauch · letzte {edenaiDisplay.periodDays} Tage
+                    </span>
+                  </div>
+                )}
+
+              {edenaiDisplay.values.includes('calls') &&
+                usage?.calls !== undefined &&
+                !usage.error && (
+                  <div className={styles.balanceRow}>
+                    <span className={styles.balanceValue}>
+                      {new Intl.NumberFormat('de-DE').format(usage.calls)}
+                    </span>
+                    <span className={styles.balanceLabel}>
+                      Calls · letzte {edenaiDisplay.periodDays} Tage
+                    </span>
+                  </div>
+                )}
             </div>
           )}
         </section>
@@ -129,8 +173,7 @@ export default function Stats() {
             <div className={styles.unconfigured}>
               <p className={styles.empty}>Keine Webseiten konfiguriert.</p>
               <p className={styles.hint}>
-                Trage URLs (kommagetrennt) in <code>MONITOR_URLS</code> in die{' '}
-                <code>server/.env</code> ein.
+                Füge unter <strong>Einstellungen → Stats &amp; Monitoring</strong> URLs hinzu.
               </p>
             </div>
           ) : (

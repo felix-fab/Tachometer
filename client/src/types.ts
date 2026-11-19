@@ -3,8 +3,9 @@
 /** A single calendar event, as returned by the backend calendar endpoint. */
 export interface CalendarEvent {
   id: string;
-  source: 'google' | 'microsoft';
+  source: 'google';
   calendarId: string | null;
+  calendarName: string | null;
   color: string | null;
   summary: string;
   location: string | null;
@@ -68,6 +69,12 @@ export interface Settings {
   clock_seconds?: boolean;
   accent?: string;
   google_calendars?: string[];
+  /** Masked EdenAI management key (only last 4 chars visible). */
+  edenai_key?: string;
+  /** List of monitored website URLs. */
+  monitor_urls?: string[];
+  /** Which EdenAI values to show and over what period. */
+  edenai_display?: EdenaiDisplayConfig;
 }
 
 /** A sub-set of settings that may be sent to PUT /api/settings. */
@@ -76,7 +83,6 @@ export type SettingsPatch = Partial<Settings>;
 /** Response of GET /api/auth/status. */
 export interface AuthStatus {
   google: ProviderStatus;
-  microsoft: ProviderStatus;
 }
 
 export interface ProviderStatus {
@@ -107,9 +113,29 @@ export interface EdenaiBalance {
   error?: string;
 }
 
+/** EdenAI usage (cost + calls) over a period. */
+export interface EdenaiUsage {
+  usage?: number;
+  calls?: number;
+  error?: string;
+}
+
+/** Configured EdenAI display options (which values + period). */
+export interface EdenaiDisplayConfig {
+  values: ('balance' | 'usage' | 'calls')[];
+  periodDays: number;
+}
+
+/** EdenAI section of the monitor response. */
+export interface EdenaiMonitor {
+  display: EdenaiDisplayConfig;
+  balanceData?: EdenaiBalance | null;
+  usageData?: EdenaiUsage | null;
+}
+
 /** Response of GET /api/monitor. */
 export interface MonitorResponse {
-  edenai: EdenaiBalance;
+  edenai: EdenaiMonitor;
   websites: WebsiteProbe[];
   updatedAt: string;
 }

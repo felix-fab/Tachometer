@@ -2,11 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { fetchCalendar } from '../../api';
 import type { CalendarEvent } from '../../types';
 import type { WidgetProps } from './index';
+import Loading from '../ui/Loading';
+import { REFRESH } from '../../constants';
 import styles from './Calendar.module.css';
 
 interface CalendarProps extends WidgetProps {}
 
-const POLL_INTERVAL_MS = 5 * 60_000;
 const NOW_INTERVAL_MS = 60_000;
 
 /** Minutes in a full day. */
@@ -25,7 +26,6 @@ interface PlacedEvent {
   width: number;
   isNow: boolean;
   startLabel: string;
-  lane: 'private' | 'teams';
 }
 
 function minutesOfDay(date: Date): number {
@@ -135,19 +135,10 @@ function overlapsDate(event: CalendarEvent, date: Date): boolean {
   return day >= startDay && day <= endDay;
 }
 
-/** Lane for an event: Google → private, Microsoft → Teams. */
-function laneOf(event: CalendarEvent): 'private' | 'teams' {
-  return event.source === 'google' ? 'private' : 'teams';
-}
-
-/**
- * Resolve the display color for an event:
- * Google events use their calendar color, Microsoft events fall back to the
- * Microsoft accent. Google events without a color fall back to the Google accent.
- */
+/** Resolve the display color for an event. */
 function eventColor(event: CalendarEvent): string {
   if (event.color) return event.color;
-  return event.source === 'google' ? 'var(--google)' : 'var(--microsoft)';
+  return 'var(--google)';
 }
 
 /**
@@ -215,7 +206,7 @@ export default function Calendar({ config }: CalendarProps) {
 
   useEffect(() => {
     void load();
-    const id = window.setInterval(() => void load(), POLL_INTERVAL_MS);
+    const id = window.setInterval(() => void load(), REFRESH.calendarMs);
     return () => window.clearInterval(id);
   }, [load]);
 
@@ -230,54 +221,45 @@ export default function Calendar({ config }: CalendarProps) {
 
     const hourMarks = buildHourMarks();
 
-    // Build a positioned list per lane, with overlap packing inside each lane.
+    // Build a positioned list, with overlap packing.
     const placed: PlacedEvent[] = [];
 
-    const byLane: Record<'private' | 'teams', typeof timed> = {
-      private: [],
-      teams: [],
-    };
-    for (const e of timed) byLane[laneOf(e)].push(e);
+    const withRange = timed
+      .map((event) => {
+        const start = event.start ? new Date(event.start) : null;
+        const end = event.end ? new Date(event.end) : null;
+        if (!start || Number.isNaN(start.getTime())) return null;
+        // Snap to full hours so events align with the hourly grid.
+        const startMin = clampToWindow(roundStartToHour(start));
+        let startPos = minutePosition(startMin);
+        let endPos = end
+          ? minutePosition(clampToWindow(roundEndToHour(end)))
+          : startPos + (60 / WINDOW_MINUTES) * (100 - TIMELINE_BOTTOM_RESERVE);
+        // Clamp to the window (07:00–24:00).
+        startPos = Math.max(0, startPos);
+        endPos = Math.min(100, endPos);
+        return {
+          event,
+          startPos,
+          endPos,
+          top: startPos,
+          height: Math.max(endPos - startPos, 1.5),
+        };
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null)
+      .sort((a, b) => a.startPos - b.startPos);
 
-    for (const lane of ['private', 'teams'] as const) {
-      const withRange = byLane[lane]
-        .map((event) => {
-          const start = event.start ? new Date(event.start) : null;
-          const end = event.end ? new Date(event.end) : null;
-          if (!start || Number.isNaN(start.getTime())) return null;
-          // Snap to full hours so events align with the hourly grid.
-          const startMin = clampToWindow(roundStartToHour(start));
-          let startPos = minutePosition(startMin);
-          let endPos = end
-            ? minutePosition(clampToWindow(roundEndToHour(end)))
-            : startPos + (60 / WINDOW_MINUTES) * (100 - TIMELINE_BOTTOM_RESERVE);
-          // Clamp to the window (07:00–24:00).
-          startPos = Math.max(0, startPos);
-          endPos = Math.min(100, endPos);
-          return {
-            event,
-            startPos,
-            endPos,
-            top: startPos,
-            height: Math.max(endPos - startPos, 1.5),
-          };
-        })
-        .filter((x): x is NonNullable<typeof x> => x !== null)
-        .sort((a, b) => a.startPos - b.startPos);
-
-      const packed = layoutColumns(withRange);
-      for (const p of packed) {
-        placed.push({
-          event: p.event,
-          top: p.top,
-          height: p.height,
-          left: (p.col / p.cols) * 100,
-          width: 100 / p.cols,
-          isNow: nowPosition >= p.top && nowPosition <= p.top + p.height,
-          startLabel: formatTime(p.event.start),
-          lane,
-        });
-      }
+    const packed = layoutColumns(withRange);
+    for (const p of packed) {
+      placed.push({
+        event: p.event,
+        top: p.top,
+        height: p.height,
+        left: (p.col / p.cols) * 100,
+        width: 100 / p.cols,
+        isNow: nowPosition >= p.top && nowPosition <= p.top + p.height,
+        startLabel: formatTime(p.event.start),
+      });
     }
 
     return {
@@ -293,20 +275,10 @@ export default function Calendar({ config }: CalendarProps) {
     <div className={styles.panel}>
       <div className={styles.header}>
         <div className={styles.title}>Heutige Termine</div>
-        <div className={styles.sourceBadges}>
-          <span className={styles.badge}>
-            <span className={`${styles.badgeDot} ${styles.badgeDotGoogle}`} />
-            Privat
-          </span>
-          <span className={styles.badge}>
-            <span className={`${styles.badgeDot} ${styles.badgeDotMicrosoft}`} />
-            Teams
-          </span>
-        </div>
       </div>
 
       {loading && events.length === 0 ? (
-        <p className={styles.empty}>Lädt…</p>
+        <Loading rows={3} label="Termine werden geladen" />
       ) : empty ? (
         <p className={styles.empty}>Keine Termine für heute</p>
       ) : (
@@ -347,64 +319,30 @@ export default function Calendar({ config }: CalendarProps) {
             ))}
 
             <div className={styles.lane} style={{ left: '3.25rem' }}>
-              {placed
-                .filter((p) => p.lane === 'private')
-                .map((p) => (
-                  <button
-                    key={p.event.id}
-                    type="button"
-                    className={`${styles.event} ${p.isNow ? styles.eventNow : ''}`}
-                    style={{
-                      top: `${p.top}%`,
-                      height: `${p.height}%`,
-                      left: `${p.left}%`,
-                      width: `${p.width}%`,
-                    }}
-                    title={p.event.summary}
-                    onClick={() => setSelectedEvent(p.event)}
-                  >
-                    <div
-                      className={styles.eventColorBar}
-                      style={{ background: eventColor(p.event) }}
-                    />
-                    <div className={styles.eventBody}>
-                      <div className={styles.eventSummary}>{p.event.summary}</div>
-                      <div className={styles.eventTime}>{p.startLabel}</div>
-                    </div>
-                  </button>
-                ))}
-            </div>
-
-            <div
-              className={`${styles.lane} ${styles.laneTeams}`}
-              style={{ left: `calc(3.25rem + (100% - 3.25rem - 0.5rem) / 2)` }}
-            >
-              {placed
-                .filter((p) => p.lane === 'teams')
-                .map((p) => (
-                  <button
-                    key={p.event.id}
-                    type="button"
-                    className={`${styles.event} ${p.isNow ? styles.eventNow : ''}`}
-                    style={{
-                      top: `${p.top}%`,
-                      height: `${p.height}%`,
-                      left: `${p.left}%`,
-                      width: `${p.width}%`,
-                    }}
-                    title={p.event.summary}
-                    onClick={() => setSelectedEvent(p.event)}
-                  >
-                    <div
-                      className={styles.eventColorBar}
-                      style={{ background: eventColor(p.event) }}
-                    />
-                    <div className={styles.eventBody}>
-                      <div className={styles.eventSummary}>{p.event.summary}</div>
-                      <div className={styles.eventTime}>{p.startLabel}</div>
-                    </div>
-                  </button>
-                ))}
+              {placed.map((p) => (
+                <button
+                  key={p.event.id}
+                  type="button"
+                  className={`${styles.event} ${p.isNow ? styles.eventNow : ''}`}
+                  style={{
+                    top: `${p.top}%`,
+                    height: `${p.height}%`,
+                    left: `${p.left}%`,
+                    width: `${p.width}%`,
+                  }}
+                  title={p.event.summary}
+                  onClick={() => setSelectedEvent(p.event)}
+                >
+                  <div
+                    className={styles.eventColorBar}
+                    style={{ background: eventColor(p.event) }}
+                  />
+                  <div className={styles.eventBody}>
+                    <div className={styles.eventSummary}>{p.event.summary}</div>
+                    <div className={styles.eventTime}>{p.startLabel}</div>
+                  </div>
+                </button>
+              ))}
             </div>
 
             <div className={styles.nowLine}>
@@ -432,9 +370,7 @@ export default function Calendar({ config }: CalendarProps) {
                   className={styles.popupDot}
                   style={{ background: eventColor(selectedEvent) }}
                 />
-                <span className={styles.popupLane}>
-                  {laneOf(selectedEvent) === 'private' ? 'Privat' : 'Teams'}
-                </span>
+                <span className={styles.popupLane}>Privat</span>
               </div>
               <button
                 type="button"
@@ -460,10 +396,8 @@ export default function Calendar({ config }: CalendarProps) {
                 </div>
               )}
               <div className={styles.popupRow}>
-                <dt>Quelle</dt>
-                <dd>
-                  {selectedEvent.source === 'google' ? 'Google (privat)' : 'Microsoft (Teams)'}
-                </dd>
+                <dt>Kalender</dt>
+                <dd>{selectedEvent.calendarName || 'Google Kalender'}</dd>
               </div>
             </dl>
           </div>

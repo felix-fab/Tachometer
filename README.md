@@ -1,7 +1,7 @@
 # Tachometer Dashboard – Raspberry Pi
 
 Touch-optimiertes Dashboard für den Raspberry Pi: Uhr, Vikunja-Aufgaben und ein
-zusammengeführter Terminkalender (Google Kalender + Microsoft/Teams). Öffnet sich
+zusammengeführter Terminkalender (Google Kalender). Öffnet sich
 beim Boot automatisch im Browser (Chromium Kiosk-Modus).
 
 ## Struktur
@@ -57,26 +57,7 @@ Tokens werden in einer lokalen SQLite-Datenbank gespeichert, nie im Browser.
    ```
 6. In der Einstellungsseite im Dashboard unter **Kalender → "Mit Google verbinden"**.
 
-### 2. Microsoft / Teams-Kalender (Graph API)
-
-1. Öffne das [Azure Portal](https://portal.azure.com/) → **App-Registrierungen** → **Neue Registrierung**.
-2. Name z. B. "Tachometer Dashboard", unterstützte Kontotypen passend zu deinem Firmenkonto.
-3. Trage als **Redirect-URI** (Web) ein:
-   `http://localhost:3001/api/auth/microsoft/callback`
-4. Unter **API-Berechtigungen** die Berechtigung `Calendars.Read` (delegiert) hinzufügen.
-5. Kopiere **Anwendungs-ID (Client)** und **Client-Secret** in `server/.env`:
-   ```
-   MS_CLIENT_ID=...
-   MS_CLIENT_SECRET=...
-   MS_REDIRECT_URI=http://localhost:3001/api/auth/microsoft/callback
-   MS_TENANT=common
-   ```
-   (Bei firmenspezifischem Mandanten `MS_TENANT` auf deine Tenant-ID setzen.)
-6. In der Einstellungsseite unter **Kalender → "Mit Microsoft verbinden"**.
-
-> Hinweis: Je nach Firmenrichtlinien kann Admin-Consent für die App nötig sein.
-
-### 3. Vikunja-Aufgaben
+### 2. Vikunja-Aufgaben
 
 1. In deiner Vikunja-Instanz einen **API-Token** erstellen (Profil → API-Tokens).
 2. Basis-URL und Token in `server/.env` eintragen:
@@ -116,12 +97,11 @@ Nach dem Boot öffnet sich Chromium automatisch im Vollbild auf dem Dashboard.
 | Methode | Pfad | Beschreibung |
 |---------|------|--------------|
 | GET | `/api/health` | Health-Check |
-| GET | `/api/calendar` | Zusammengeführte Termine (Google + Microsoft) |
+| GET | `/api/calendar` | Kommende Google-Termine |
 | GET | `/api/vikunja/tasks` | Die 5 am frühesten fälligen Vikunja-Tasks |
 | GET | `/api/vikunja/configured` | Prüft, ob Vikunja konfiguriert ist |
 | GET/PUT | `/api/widgets` / `/api/widgets/:id` | Widgets lesen/aktualisieren |
 | GET/PUT | `/api/settings` | Einstellungen lesen/aktualisieren |
-| GET | `/api/auth/status` | OAuth-Status beider Provider |
+| GET | `/api/auth/status` | OAuth-Status des Google-Providers |
 | GET | `/api/auth/google/start` | Google-OAuth starten |
-| GET | `/api/auth/microsoft/start` | Microsoft-OAuth starten |
 | POST | `/api/auth/:provider/disconnect` | Provider trennen |

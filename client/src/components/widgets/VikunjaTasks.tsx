@@ -2,11 +2,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { fetchVikunjaConfigured, fetchVikunjaTasks } from '../../api';
 import type { VikunjaTask } from '../../types';
 import type { WidgetProps } from './index';
+import Loading from '../ui/Loading';
+import { REFRESH } from '../../constants';
 import styles from './VikunjaTasks.module.css';
 
 interface VikunjaTasksProps extends WidgetProps {}
-
-const POLL_INTERVAL_MS = 60_000;
 
 /** True when the value is a usable date (not empty and not Vikunja's zero-value). */
 function isValidDate(value: string | null): value is string {
@@ -99,7 +99,7 @@ export default function VikunjaTasks(_props: VikunjaTasksProps) {
 
   useEffect(() => {
     void load();
-    const id = window.setInterval(() => void load(), POLL_INTERVAL_MS);
+    const id = window.setInterval(() => void load(), REFRESH.vikunjaMs);
     return () => window.clearInterval(id);
   }, [load]);
 
@@ -116,7 +116,7 @@ export default function VikunjaTasks(_props: VikunjaTasksProps) {
           <code>VIKUNJA_TOKEN</code> in <code>server/.env</code> ein.
         </p>
       ) : configured === null ? (
-        <p className={styles.hint}>Lädt…</p>
+        <Loading rows={4} label="Tasks werden geladen" />
       ) : tasks.length === 0 ? (
         <p className={styles.hint}>Keine offenen Tasks</p>
       ) : (

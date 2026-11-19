@@ -11,6 +11,7 @@ import styles from './App.module.css';
 const TABS = [
   { path: '/', label: 'Dashboard' },
   { path: '/stats', label: 'Stats' },
+  { path: '/settings', label: 'Einstellungen' },
 ];
 
 export default function App() {
@@ -21,15 +22,25 @@ export default function App() {
     applyTheme();
   }, []);
 
-  // Settings is a dedicated full-screen page without tabs.
-  if (route === '/settings') return <Settings />;
-
-  const activePath = route === '/stats' ? '/stats' : '/';
+  // Map the hash route to the active tab path.
+  const activePath = route === '/stats' ? '/stats' : route === '/settings' ? '/settings' : '/';
 
   return (
     <div className={styles.shell}>
       <TabBar tabs={TABS} activePath={activePath} />
-      <main className={styles.content}>{activePath === '/stats' ? <Stats /> : <Dashboard />}</main>
+      {/* Keep all views mounted and hide the inactive ones so their
+          loaded data is cached across tab switches (no reload). */}
+      <main className={styles.content}>
+        <div className={styles.view} hidden={activePath !== '/'}>
+          <Dashboard />
+        </div>
+        <div className={styles.view} hidden={activePath !== '/stats'}>
+          <Stats />
+        </div>
+        <div className={styles.view} hidden={activePath !== '/settings'}>
+          <Settings />
+        </div>
+      </main>
     </div>
   );
 }

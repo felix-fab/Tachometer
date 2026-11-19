@@ -17,7 +17,6 @@
   --danger: #ef4444;
   --success: #22c55e;
   --google: #4285f4;
-  --microsoft: #f25022;
   --chip-bg: rgba(255, 255, 255, 0.06);
   --hover: rgba(255, 255, 255, 0.08);
 }
@@ -51,6 +50,11 @@ body,
   height: 100%;
   margin: 0;
   padding: 0;
+}
+
+html,
+body {
+  overscroll-behavior: none;
 }
 
 body {
