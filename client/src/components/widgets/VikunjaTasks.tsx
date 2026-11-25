@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { fetchVikunjaConfigured, fetchVikunjaTasks } from '../../api';
 import type { VikunjaTask } from '../../types';
 import type { WidgetProps } from './index';
 import Loading from '../ui/Loading';
 import { REFRESH } from '../../constants';
+import { onRefresh } from '../../refresh';
 import styles from './VikunjaTasks.module.css';
 
 interface VikunjaTasksProps extends WidgetProps {}
@@ -100,7 +102,11 @@ export default function VikunjaTasks(_props: VikunjaTasksProps) {
   useEffect(() => {
     void load();
     const id = window.setInterval(() => void load(), REFRESH.vikunjaMs);
-    return () => window.clearInterval(id);
+    const unsub = onRefresh(() => void load());
+    return () => {
+      window.clearInterval(id);
+      unsub();
+    };
   }, [load]);
 
   return (
@@ -175,93 +181,95 @@ export default function VikunjaTasks(_props: VikunjaTasksProps) {
 
       {error && <div className={styles.error}>Fehler: {error}</div>}
 
-      {selected && (
-        <div className={styles.overlay} onClick={closePopup}>
-          <div
-            className={styles.popup}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Task-Details"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className={styles.popupTop}>
-              {selected.project && (
-                <span className={styles.popupProject}>
-                  <span
-                    className={styles.popupProjectDot}
-                    style={
-                      selected.projectColor
-                        ? { background: selected.projectColor }
-                        : undefined
-                    }
-                  />
-                  {selected.project}
-                </span>
-              )}
-              <button
-                type="button"
-                className={styles.popupClose}
-                onClick={closePopup}
-                aria-label="Schließen"
-              >
-                ✕
-              </button>
+      {selected &&
+        createPortal(
+          <div className={styles.overlay} onClick={closePopup}>
+            <div
+              className={styles.popup}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Task-Details"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className={styles.popupTop}>
+                {selected.project && (
+                  <span className={styles.popupProject}>
+                    <span
+                      className={styles.popupProjectDot}
+                      style={
+                        selected.projectColor
+                          ? { background: selected.projectColor }
+                          : undefined
+                      }
+                    />
+                    {selected.project}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  className={styles.popupClose}
+                  onClick={closePopup}
+                  aria-label="Schließen"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <h3 className={styles.popupTitle}>{selected.title}</h3>
+
+              <dl className={styles.popupDetails}>
+                {selected.description && (
+                  <div className={styles.popupBlock}>
+                    <dt>Beschreibung</dt>
+                    <dd className={styles.popupDescription}>{selected.description}</dd>
+                  </div>
+                )}
+                {isValidDate(selected.dueDate) && (
+                  <div className={styles.popupRow}>
+                    <dt>Fällig</dt>
+                    <dd className={isOverdue(selected.dueDate!) ? styles.dueOverdue : undefined}>
+                      {formatFullDate(selected.dueDate)}
+                      {isOverdue(selected.dueDate!) ? ' (überfällig)' : ''}
+                    </dd>
+                  </div>
+                )}
+                <div className={styles.popupRow}>
+                  <dt>Priorität</dt>
+                  <dd>{priorityLabel(selected.priority)}</dd>
+                </div>
+                {selected.assignees.length > 0 && (
+                  <div className={styles.popupRow}>
+                    <dt>Zugewiesen an</dt>
+                    <dd>{selected.assignees.join(', ')}</dd>
+                  </div>
+                )}
+                {selected.labels.length > 0 && (
+                  <div className={styles.popupBlock}>
+                    <dt>Labels</dt>
+                    <dd className={styles.popupLabels}>
+                      {selected.labels.map((label) => (
+                        <span key={label} className={styles.popupLabel}>
+                          {label}
+                        </span>
+                      ))}
+                    </dd>
+                  </div>
+                )}
+                {isValidDate(selected.createdAt) && (
+                  <div className={styles.popupRow}>
+                    <dt>Erstellt</dt>
+                    <dd>{formatFullDate(selected.createdAt)}</dd>
+                  </div>
+                )}
+                <div className={styles.popupRow}>
+                  <dt>Kennung</dt>
+                  <dd>{selected.identifier}</dd>
+                </div>
+              </dl>
             </div>
-
-            <h3 className={styles.popupTitle}>{selected.title}</h3>
-
-            <dl className={styles.popupDetails}>
-              {selected.description && (
-                <div className={styles.popupBlock}>
-                  <dt>Beschreibung</dt>
-                  <dd className={styles.popupDescription}>{selected.description}</dd>
-                </div>
-              )}
-              {isValidDate(selected.dueDate) && (
-                <div className={styles.popupRow}>
-                  <dt>Fällig</dt>
-                  <dd className={isOverdue(selected.dueDate!) ? styles.dueOverdue : undefined}>
-                    {formatFullDate(selected.dueDate)}
-                    {isOverdue(selected.dueDate!) ? ' (überfällig)' : ''}
-                  </dd>
-                </div>
-              )}
-              <div className={styles.popupRow}>
-                <dt>Priorität</dt>
-                <dd>{priorityLabel(selected.priority)}</dd>
-              </div>
-              {selected.assignees.length > 0 && (
-                <div className={styles.popupRow}>
-                  <dt>Zugewiesen an</dt>
-                  <dd>{selected.assignees.join(', ')}</dd>
-                </div>
-              )}
-              {selected.labels.length > 0 && (
-                <div className={styles.popupBlock}>
-                  <dt>Labels</dt>
-                  <dd className={styles.popupLabels}>
-                    {selected.labels.map((label) => (
-                      <span key={label} className={styles.popupLabel}>
-                        {label}
-                      </span>
-                    ))}
-                  </dd>
-                </div>
-              )}
-              {isValidDate(selected.createdAt) && (
-                <div className={styles.popupRow}>
-                  <dt>Erstellt</dt>
-                  <dd>{formatFullDate(selected.createdAt)}</dd>
-                </div>
-              )}
-              <div className={styles.popupRow}>
-                <dt>Kennung</dt>
-                <dd>{selected.identifier}</dd>
-              </div>
-            </dl>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

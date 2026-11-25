@@ -13,6 +13,16 @@ import settingsRouter from './routes/settings.js';
 import vikunjaRouter from './routes/vikunja.js';
 import widgetsRouter from './routes/widgets.js';
 
+// Keep the server alive when an external service fails (e.g. Vikunja
+// unreachable, Google token expired). Without this, a single failed request
+// tears down the whole process.
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled promise rejection:', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err);
+});
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();

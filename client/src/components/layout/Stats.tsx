@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { fetchMonitor } from '../../api';
 import type { MonitorResponse } from '../../types';
 import { REFRESH } from '../../constants';
+import { onRefresh } from '../../refresh';
 import styles from './Stats.module.css';
 
 /** Format a balance with its currency, e.g. "12.34 USD". */
@@ -50,7 +51,11 @@ export default function Stats() {
   useEffect(() => {
     void load();
     const id = window.setInterval(() => void load(), REFRESH.monitorMs);
-    return () => window.clearInterval(id);
+    const unsub = onRefresh(() => void load());
+    return () => {
+      window.clearInterval(id);
+      unsub();
+    };
   }, [load]);
 
   const edenai = data?.edenai;

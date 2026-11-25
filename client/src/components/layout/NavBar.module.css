@@ -1,0 +1,235 @@
+.topBar {
+  position: relative;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  height: 3rem;
+  padding: 0 0.75rem;
+  background: var(--panel);
+  border-bottom: 1px solid var(--panel-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Shared styling for the burger and refresh buttons. */
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--chip-bg);
+  border: 1px solid var(--panel-border);
+  color: var(--text);
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.12s ease;
+}
+
+.iconButton:hover {
+  background: var(--hover);
+  color: var(--accent);
+}
+
+.iconButton:active {
+  transform: scale(0.94);
+}
+
+/* Burger lines container */
+.burgerLines {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.burgerBar {
+  display: block;
+  width: 18px;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  transition:
+    transform 0.25s ease,
+    opacity 0.2s ease;
+}
+
+.burgerBarOpen1 {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.burgerBarOpen2 {
+  opacity: 0;
+}
+
+.burgerBarOpen3 {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
+/* Refresh icon */
+.refreshIcon {
+  width: 20px;
+  height: 20px;
+}
+
+.refreshSpinning {
+  animation: spin 0.6s ease-in-out;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Dimmed backdrop behind the sliding panel (rendered at <body> level). */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  top: 3rem;
+  z-index: 90;
+  background: rgba(0, 0, 0, 0.4);
+  animation: fadeIn 0.25s ease-out;
+}
+
+/* Sliding panel anchored to the right edge (rendered at <body> level). */
+.panel {
+  position: fixed;
+  top: 3rem;
+  right: 0;
+  bottom: 0;
+  width: min(320px, 85vw);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel-solid);
+  border-left: 1px solid var(--panel-border);
+  box-shadow: -12px 0 32px rgba(0, 0, 0, 0.35);
+  animation: slideIn 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  overflow-y: auto;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0.5;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.panelTitle {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.closeButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  color: var(--muted);
+  background: var(--chip-bg);
+  border: 1px solid var(--panel-border);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.closeButton:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem;
+  gap: 0.25rem;
+}
+
+.navItem {
+  position: relative;
+  text-align: left;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.navItem:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+/* Active item: subtle highlight + an accent bar on the left instead of a
+   filled pill. */
+.navItemActive {
+  background: var(--chip-bg);
+  color: var(--text);
+}
+
+.navItemActive::before {
+  content: '';
+  position: absolute;
+  left: 0.35rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.navItemActive:hover {
+  background: var(--chip-bg);
+  color: var(--text);
+}

@@ -71,7 +71,11 @@ Tokens werden in einer lokalen SQLite-Datenbank gespeichert, nie im Browser.
 
 ## Raspberry Pi Deployment (Kiosk-Modus)
 
-1. Projekt nach `/home/pi/tachometer` kopieren.
+1. Projekt auf den Pi kopieren, z. B. nach `/home/felixfab/Documents/Tachometer`.
+   > **Hinweis:** Die Pfade in `pi/tachometer.service`, `pi/autostart.desktop` und
+   > `pi/kiosk.sh` müssen zum tatsächlichen Projektpfad und Benutzernamen passen.
+   > Bei anderem Speicherort alle Vorkommen von `/home/felixfab/Documents/Tachometer`
+   > und `User=felixfab` ersetzen.
 2. `server/.env` mit den OAuth-Credentials befüllen.
 3. Backend als systemd-Service einrichten:
    ```bash

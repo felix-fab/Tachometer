@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { fetchCalendar } from '../../api';
 import type { CalendarEvent } from '../../types';
 import type { WidgetProps } from './index';
 import Loading from '../ui/Loading';
 import { REFRESH } from '../../constants';
+import { onRefresh } from '../../refresh';
 import styles from './Calendar.module.css';
 
 interface CalendarProps extends WidgetProps {}
@@ -207,7 +209,11 @@ export default function Calendar({ config }: CalendarProps) {
   useEffect(() => {
     void load();
     const id = window.setInterval(() => void load(), REFRESH.calendarMs);
-    return () => window.clearInterval(id);
+    const unsub = onRefresh(() => void load());
+    return () => {
+      window.clearInterval(id);
+      unsub();
+    };
   }, [load]);
 
   const { allDayEvents, placed, nowPosition, hourMarks, empty } = useMemo(() => {
@@ -274,6 +280,7 @@ export default function Calendar({ config }: CalendarProps) {
   return (
     <div className={styles.panel}>
       <div className={styles.header}>
+        <span className={styles.titleDot} aria-hidden="true" />
         <div className={styles.title}>Heutige Termine</div>
       </div>
 
@@ -355,54 +362,56 @@ export default function Calendar({ config }: CalendarProps) {
         </div>
       )}
 
-      {selectedEvent && (
-        <div className={styles.overlay} onClick={closePopup}>
-          <div
-            className={styles.popup}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Termindetails"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className={styles.popupTop}>
-              <div className={styles.popupHeader}>
-                <span
-                  className={styles.popupDot}
-                  style={{ background: eventColor(selectedEvent) }}
-                />
-                <span className={styles.popupLane}>Privat</span>
-              </div>
-              <button
-                type="button"
-                className={styles.popupClose}
-                onClick={closePopup}
-                aria-label="Schließen"
-              >
-                ✕
-              </button>
-            </div>
-
-            <h3 className={styles.popupTitle}>{selectedEvent.summary}</h3>
-
-            <dl className={styles.popupDetails}>
-              <div className={styles.popupRow}>
-                <dt>Zeit</dt>
-                <dd>{formatRange(selectedEvent)}</dd>
-              </div>
-              {selectedEvent.location && (
-                <div className={styles.popupRow}>
-                  <dt>Ort</dt>
-                  <dd>{selectedEvent.location}</dd>
+      {selectedEvent &&
+        createPortal(
+          <div className={styles.overlay} onClick={closePopup}>
+            <div
+              className={styles.popup}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Termindetails"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className={styles.popupTop}>
+                <div className={styles.popupHeader}>
+                  <span
+                    className={styles.popupDot}
+                    style={{ background: eventColor(selectedEvent) }}
+                  />
+                  <span className={styles.popupLane}>Privat</span>
                 </div>
-              )}
-              <div className={styles.popupRow}>
-                <dt>Kalender</dt>
-                <dd>{selectedEvent.calendarName || 'Google Kalender'}</dd>
+                <button
+                  type="button"
+                  className={styles.popupClose}
+                  onClick={closePopup}
+                  aria-label="Schließen"
+                >
+                  ✕
+                </button>
               </div>
-            </dl>
-          </div>
-        </div>
-      )}
+
+              <h3 className={styles.popupTitle}>{selectedEvent.summary}</h3>
+
+              <dl className={styles.popupDetails}>
+                <div className={styles.popupRow}>
+                  <dt>Zeit</dt>
+                  <dd>{formatRange(selectedEvent)}</dd>
+                </div>
+                {selectedEvent.location && (
+                  <div className={styles.popupRow}>
+                    <dt>Ort</dt>
+                    <dd>{selectedEvent.location}</dd>
+                  </div>
+                )}
+                <div className={styles.popupRow}>
+                  <dt>Kalender</dt>
+                  <dd>{selectedEvent.calendarName || 'Google Kalender'}</dd>
+                </div>
+              </dl>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

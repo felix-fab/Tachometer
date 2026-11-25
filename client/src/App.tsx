@@ -2,13 +2,13 @@ import { useEffect } from 'react';
 import Dashboard from './components/layout/Dashboard';
 import Settings from './components/layout/Settings';
 import Stats from './components/layout/Stats';
-import TabBar from './components/layout/TabBar';
+import NavBar from './components/layout/NavBar';
 import { useHashRoute } from './router';
 import { applyTheme } from './styles/theme';
 import './styles/global.css';
 import styles from './App.module.css';
 
-const TABS = [
+const NAV_ITEMS = [
   { path: '/', label: 'Dashboard' },
   { path: '/stats', label: 'Stats' },
   { path: '/settings', label: 'Einstellungen' },
@@ -27,7 +27,7 @@ export default function App() {
 
   return (
     <div className={styles.shell}>
-      <TabBar tabs={TABS} activePath={activePath} />
+      <NavBar items={NAV_ITEMS} activePath={activePath} />
       {/* Keep all views mounted and hide the inactive ones so their
           loaded data is cached across tab switches (no reload). */}
       <main className={styles.content}>

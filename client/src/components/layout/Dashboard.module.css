@@ -4,15 +4,15 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr;
-  gap: 1.5rem;
-  padding: 1.5rem;
+  gap: 1.25rem;
+  padding: 1.25rem;
   overflow: hidden;
 }
 
 .leftColumn {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
   min-height: 0;
   min-width: 0;
 }
@@ -23,13 +23,14 @@
 }
 
 .panel {
+  position: relative;
   background: var(--panel);
   border: 1px solid var(--panel-border);
-  border-radius: 24px;
+  border-radius: 16px;
   box-shadow: var(--shadow);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  padding: 1.5rem;
+  padding: 0.75rem;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -41,36 +42,60 @@
   animation: panelIn 0.6s ease-out both;
 }
 
+/* Subtle inner highlight along the top edge for a bit of depth. */
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 12px;
+  right: 12px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
 .panel:hover {
   border-color: rgba(255, 255, 255, 0.16);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.32);
 }
 
 @keyframes panelIn {
   from {
     opacity: 0;
-    transform: translateY(12px) scale(0.99);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 
+/* Each widget panel gets its own subtle tint so the areas are
+   visually distinguishable from one another. */
 .panelTopLeft {
   flex: 0 0 auto;
   justify-content: center;
   align-items: center;
+  background:
+    radial-gradient(120% 120% at 50% 0%, rgba(232, 134, 42, 0.12), transparent 55%),
+    var(--panel);
 }
 
 .panelBottomLeft {
   flex: 1 1 auto;
   justify-content: center;
   align-items: center;
+  background:
+    radial-gradient(120% 120% at 50% 100%, rgba(66, 133, 244, 0.1), transparent 55%),
+    var(--panel);
 }
 
 .panelRight {
   height: 100%;
+  background:
+    radial-gradient(120% 120% at 100% 0%, rgba(168, 85, 247, 0.1), transparent 55%),
+    var(--panel);
 }
 
 .loading {
