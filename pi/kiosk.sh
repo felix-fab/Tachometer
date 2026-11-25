@@ -16,16 +16,14 @@ sleep 8
 # Chromium im Kiosk-Modus starten; bei Absturz automatisch neu starten
 while true; do
   /usr/bin/chromium \
-    --start-fullscreen \
+    --kiosk \
     --noerrdialogs \
     --disable-infobars \
     --disable-session-crashed-bubble \
     --check-for-update-interval=31536000 \
     --touch-events=enabled \
-    --enable-features=TouchEvents,TouchEventFeatureDetection \
     --enable-pinch \
     --overscroll-history-navigation=0 \
-    --disable-features=TranslateUI \
     "$DASHBOARD_URL"
   echo "Chromium beendet, Neustart in 5s..."
   sleep 5
