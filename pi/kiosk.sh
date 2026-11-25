@@ -18,6 +18,7 @@ while true; do
   /usr/bin/chromium \
     --kiosk \
     --noerrdialogs \
+    --password-store=basic \
     --disable-infobars \
     --disable-session-crashed-bubble \
     --check-for-update-interval=31536000 \
