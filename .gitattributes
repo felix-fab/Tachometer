@@ -1,0 +1,4 @@
+# Shell-Skripte brauchen LF-Zeilenenden, sonst schlagen sie auf Linux (z. B.
+# auf dem Raspberry Pi) fehl. Git erzwingt hier LF, auch wenn unter Windows
+# gearbeitet wird.
+*.sh text eol=lf
