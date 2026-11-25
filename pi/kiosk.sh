@@ -7,8 +7,16 @@ export DISPLAY=:0
 
 DASHBOARD_URL="${1:-http://localhost:3001/}"
 
-# Cursor nach 0.5s Inaktivität ausblenden
-unclutter -idle 0.5 -root &
+# Cursor ausblenden. Bevorzugt unclutter-xfixes (startet ausgeblendet und
+# zeigt den Cursor nur bei echter Mausbewegung – zuverlässig im Kiosk).
+# Fallback: klassisches unclutter mit Idle-Zeit 0 (sofort ausblenden).
+if command -v unclutter-xfixes >/dev/null 2>&1; then
+  unclutter-xfixes --start-hidden --timeout 0 &
+elif command -v unclutter >/dev/null 2>&1; then
+  unclutter -idle 0 -root &
+else
+  echo "Warnung: Weder unclutter-xfixes noch unclutter gefunden."
+fi
 
 # Kurz warten, bis der Desktop/Display bereit ist
 sleep 8
