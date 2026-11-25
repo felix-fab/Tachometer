@@ -9,7 +9,8 @@ export interface NavItem {
   label: string;
 }
 
-/** Compact top bar: burger menu + refresh button in the top-right corner. */
+/** Floating FAB bottom-right: opens a slide-in nav panel (which also
+    contains the refresh button). */
 export default function NavBar({
   items,
   activePath,
@@ -91,6 +92,29 @@ export default function NavBar({
                 );
               })}
             </nav>
+
+            <div className={styles.panelFooter}>
+              <button
+                type="button"
+                className={styles.refreshButton}
+                onClick={handleRefresh}
+              >
+                <svg
+                  className={`${styles.refreshIcon} ${spinning ? styles.refreshSpinning : ''}`}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <polyline points="23 4 23 10 17 10" />
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                </svg>
+                Daten aktualisieren
+              </button>
+            </div>
           </div>
         </>,
         document.body
@@ -98,47 +122,23 @@ export default function NavBar({
     : null;
 
   return (
-    <header className={styles.topBar}>
-      <div className={styles.actions}>
-        <button
-          type="button"
-          className={styles.iconButton}
-          onClick={() => setOpen((v) => !v)}
-          aria-label={open ? 'Menü schließen' : 'Menü öffnen'}
-          aria-expanded={open}
-          aria-controls="nav-menu"
-        >
-          <span className={styles.burgerLines}>
-            <span className={`${styles.burgerBar} ${open ? styles.burgerBarOpen1 : ''}`} />
-            <span className={`${styles.burgerBar} ${open ? styles.burgerBarOpen2 : ''}`} />
-            <span className={`${styles.burgerBar} ${open ? styles.burgerBarOpen3 : ''}`} />
-          </span>
-        </button>
-
-        <button
-          type="button"
-          className={styles.iconButton}
-          onClick={handleRefresh}
-          aria-label="Daten aktualisieren"
-          title="Daten aktualisieren"
-        >
-          <svg
-            className={`${styles.refreshIcon} ${spinning ? styles.refreshSpinning : ''}`}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <polyline points="23 4 23 10 17 10" />
-            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-          </svg>
-        </button>
-      </div>
+    <>
+      <button
+        type="button"
+        className={`${styles.fab} ${open ? styles.fabOpen : ''}`}
+        onClick={() => setOpen((v) => !v)}
+        aria-label={open ? 'Menü schließen' : 'Menü öffnen'}
+        aria-expanded={open}
+        aria-controls="nav-menu"
+      >
+        <span className={styles.burgerLines}>
+          <span className={`${styles.burgerBar} ${open ? styles.burgerBarOpen1 : ''}`} />
+          <span className={`${styles.burgerBar} ${open ? styles.burgerBarOpen2 : ''}`} />
+          <span className={`${styles.burgerBar} ${open ? styles.burgerBarOpen3 : ''}`} />
+        </span>
+      </button>
 
       {menu}
-    </header>
+    </>
   );
 }

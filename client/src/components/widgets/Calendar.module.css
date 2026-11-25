@@ -22,16 +22,6 @@
   color: var(--muted);
 }
 
-/* Small accent dot next to the title, matching the other widgets. */
-.titleDot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  background: var(--google);
-  box-shadow: 0 0 8px var(--google);
-}
-
 /* Scrollable container for the timeline */
 .timelineWrap {
   flex: 1 1 auto;
@@ -79,13 +69,23 @@
   position: absolute;
   top: 0.25rem;
   left: 0.5rem;
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   font-weight: 600;
+  line-height: 1;
   color: var(--muted);
   transform: translateY(-50%);
   background: var(--panel-solid);
-  padding: 0 0.3rem;
+  padding: 0.1rem 0.25rem;
   border-radius: 4px;
+  white-space: nowrap;
+}
+
+/* On short screens the hourly labels would overlap, so only label every
+   second hour mark. */
+@media (max-height: 600px) {
+  .timeline > .hourMark:nth-child(odd) .hourLabel {
+    display: none;
+  }
 }
 
 /* All-day events sit above the timeline. */
@@ -252,10 +252,13 @@
   white-space: nowrap;
 }
 
-.empty {
+/* Message shown above the timeline when there are no events today. */
+.emptyBanner {
   color: var(--muted);
-  font-size: 1rem;
-  padding: 0.5rem 0;
+  font-size: 0.9rem;
+  padding: 0.6rem 0.75rem;
+  text-align: center;
+  border-bottom: 1px solid var(--panel-border);
 }
 
 /* Make clickable event/chip elements behave as buttons. */

@@ -56,18 +56,9 @@ function timePosition(date: Date): number {
   return minutePosition(minutesOfDay(date));
 }
 
-/**
- * Round a minute-of-day down to the start of its full hour,
- * and round a position up to the end of the hour block.
- * Used to snap timed events into the hourly grid.
- */
-function roundStartToHour(date: Date): number {
-  return Math.floor(date.getHours()) * 60;
-}
-
-function roundEndToHour(date: Date): number {
-  const minutes = date.getHours() * 60 + date.getMinutes();
-  return Math.min(WINDOW_END_MIN, Math.ceil(minutes / 60) * 60);
+/** Exact minute-of-day (0–1440) of a Date, including seconds fraction. */
+function exactMinutesOfDay(date: Date): number {
+  return date.getHours() * 60 + date.getMinutes() + date.getSeconds() / 60;
 }
 
 /** Hour markers (07:00 – 24:00) for the timeline gutter, in AM/PM. */
@@ -235,11 +226,11 @@ export default function Calendar({ config }: CalendarProps) {
         const start = event.start ? new Date(event.start) : null;
         const end = event.end ? new Date(event.end) : null;
         if (!start || Number.isNaN(start.getTime())) return null;
-        // Snap to full hours so events align with the hourly grid.
-        const startMin = clampToWindow(roundStartToHour(start));
+        // Position events exactly at their real start/end time.
+        const startMin = clampToWindow(exactMinutesOfDay(start));
         let startPos = minutePosition(startMin);
-        let endPos = end
-          ? minutePosition(clampToWindow(roundEndToHour(end)))
+        let endPos = end && !Number.isNaN(end.getTime())
+          ? minutePosition(clampToWindow(exactMinutesOfDay(end)))
           : startPos + (60 / WINDOW_MINUTES) * (100 - TIMELINE_BOTTOM_RESERVE);
         // Clamp to the window (07:00–24:00).
         startPos = Math.max(0, startPos);
@@ -280,16 +271,17 @@ export default function Calendar({ config }: CalendarProps) {
   return (
     <div className={styles.panel}>
       <div className={styles.header}>
-        <span className={styles.titleDot} aria-hidden="true" />
         <div className={styles.title}>Heutige Termine</div>
       </div>
 
       {loading && events.length === 0 ? (
         <Loading rows={3} label="Termine werden geladen" />
-      ) : empty ? (
-        <p className={styles.empty}>Keine Termine für heute</p>
       ) : (
         <div className={styles.timelineWrap}>
+          {empty && (
+            <p className={styles.emptyBanner}>Keine Termine für heute</p>
+          )}
+
           {allDayEvents.length > 0 && (
             <div className={styles.allDay}>
               <div className={styles.allDayList}>
