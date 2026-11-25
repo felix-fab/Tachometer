@@ -225,7 +225,7 @@ export default function Settings() {
   const theme = settings.theme === 'light' ? 'light' : 'dark';
 
   return (
-    <div className={styles.page}>
+    <div className={styles.page} data-scrollable>
       <div className={styles.header}>
         <h1 className={styles.title}>Einstellungen</h1>
       </div>

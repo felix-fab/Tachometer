@@ -21,27 +21,6 @@
   color: var(--muted);
 }
 
-.dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 10px var(--accent);
-  animation: dotPulse 2s ease-in-out infinite;
-}
-
-@keyframes dotPulse {
-  0%,
-  100% {
-    box-shadow: 0 0 6px var(--accent);
-    transform: scale(1);
-  }
-  50% {
-    box-shadow: 0 0 14px 3px var(--accent);
-    transform: scale(1.15);
-  }
-}
-
 .hint {
   font-size: 1rem;
   color: var(--muted);

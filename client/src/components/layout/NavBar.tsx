@@ -62,6 +62,7 @@ export default function NavBar({
           <div
             id="nav-menu"
             className={styles.panel}
+            data-scrollable
             role="dialog"
             aria-label="Hauptnavigation"
           >

@@ -112,7 +112,6 @@ export default function VikunjaTasks(_props: VikunjaTasksProps) {
   return (
     <div className={styles.panel}>
       <div className={styles.header}>
-        <span className={styles.dot} />
         Vikunja
       </div>
 
@@ -126,7 +125,7 @@ export default function VikunjaTasks(_props: VikunjaTasksProps) {
       ) : tasks.length === 0 ? (
         <p className={styles.hint}>Keine offenen Tasks</p>
       ) : (
-        <ul className={styles.list}>
+        <ul className={styles.list} data-scrollable>
           {tasks.map((task) => {
             const hasDue = isValidDate(task.dueDate);
             const overdue = hasDue && isOverdue(task.dueDate!);

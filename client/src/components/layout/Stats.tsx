@@ -73,7 +73,7 @@ export default function Stats() {
     (usage !== null && !usage.error);
 
   return (
-    <div className={styles.page}>
+    <div className={styles.page} data-scrollable>
       <header className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>Stats &amp; Status</h1>
         <p className={styles.pageSubtitle}>

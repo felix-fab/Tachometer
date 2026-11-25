@@ -277,7 +277,7 @@ export default function Calendar({ config }: CalendarProps) {
       {loading && events.length === 0 ? (
         <Loading rows={3} label="Termine werden geladen" />
       ) : (
-        <div className={styles.timelineWrap}>
+        <div className={styles.timelineWrap} data-scrollable>
           {empty && (
             <p className={styles.emptyBanner}>Keine Termine für heute</p>
           )}
