@@ -4,8 +4,9 @@ import { fetchVikunjaConfigured, fetchVikunjaTasks } from '../../api';
 import type { VikunjaTask } from '../../types';
 import type { WidgetProps } from './index';
 import Loading from '../ui/Loading';
-import { REFRESH } from '../../constants';
+import { autoRefreshMs } from '../../constants';
 import { onRefresh } from '../../refresh';
+import { useSettingsContext } from '../../state/SettingsContext';
 import styles from './VikunjaTasks.module.css';
 
 interface VikunjaTasksProps extends WidgetProps {}
@@ -64,6 +65,9 @@ export default function VikunjaTasks(_props: VikunjaTasksProps) {
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<VikunjaTask | null>(null);
 
+  const { settings } = useSettingsContext();
+  const refreshMs = autoRefreshMs(settings);
+
   const closePopup = useCallback(() => setSelected(null), []);
 
   // Close the popup with the Escape key.
@@ -101,13 +105,16 @@ export default function VikunjaTasks(_props: VikunjaTasksProps) {
 
   useEffect(() => {
     void load();
-    const id = window.setInterval(() => void load(), REFRESH.vikunjaMs);
+    let id: number | undefined;
+    if (refreshMs !== null) {
+      id = window.setInterval(() => void load(), refreshMs);
+    }
     const unsub = onRefresh(() => void load());
     return () => {
-      window.clearInterval(id);
+      if (id !== undefined) window.clearInterval(id);
       unsub();
     };
-  }, [load]);
+  }, [load, refreshMs]);
 
   return (
     <div className={styles.panel}>

@@ -75,6 +75,14 @@ export interface Settings {
   monitor_urls?: string[];
   /** Which EdenAI values to show and over what period. */
   edenai_display?: EdenaiDisplayConfig;
+  /** Whether the dashboard/stats auto-rotation is enabled. */
+  auto_rotate_enabled?: boolean;
+  /** Seconds to wait before switching between dashboard and stats. */
+  auto_rotate_seconds?: number;
+  /** Whether automatic data refresh is enabled. */
+  auto_refresh_enabled?: boolean;
+  /** Seconds between automatic data refreshes. */
+  auto_refresh_seconds?: number;
 }
 
 /** A sub-set of settings that may be sent to PUT /api/settings. */
@@ -117,6 +125,14 @@ export interface EdenaiBalance {
 export interface EdenaiUsage {
   usage?: number;
   calls?: number;
+  /** Change in cost since the previous reading. */
+  usageDelta?: number;
+  /** Change in calls since the previous reading. */
+  callsDelta?: number;
+  /** Percent change in cost since the previous reading (null if no baseline). */
+  usagePercent?: number | null;
+  /** Percent change in calls since the previous reading (null if no baseline). */
+  callsPercent?: number | null;
   error?: string;
 }
 

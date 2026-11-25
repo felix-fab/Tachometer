@@ -166,6 +166,17 @@
   font-weight: 500;
 }
 
+.rowText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.rowHint {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
 .rowActions {
   display: flex;
   align-items: center;

@@ -21,6 +21,7 @@ const SECTIONS = [
   { id: 'kalender', label: 'Kalender' },
   { id: 'widgets', label: 'Widgets' },
   { id: 'darstellung', label: 'Darstellung' },
+  { id: 'daten', label: 'Daten' },
   { id: 'stats-monitoring', label: 'Stats & Monitoring' },
 ];
 
@@ -52,6 +53,10 @@ export default function Settings() {
   const [urlsText, setUrlsText] = useState('');
   const [edenaiValues, setEdenaiValues] = useState<string[]>([]);
   const [periodDays, setPeriodDays] = useState(30);
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
+  const [autoRefreshSeconds, setAutoRefreshSeconds] = useState(60);
+  const [autoRotateEnabled, setAutoRotateEnabled] = useState(false);
+  const [autoRotateSeconds, setAutoRotateSeconds] = useState(30);
 
   const showMessage = useCallback((type: Message['type'], text: string) => {
     setMessage({ type, text });
@@ -88,6 +93,18 @@ export default function Settings() {
       setEdenaiValues(settings.edenai_display.values);
       setPeriodDays(settings.edenai_display.periodDays || 30);
     }
+    if (settings.auto_refresh_enabled !== undefined) {
+      setAutoRefreshEnabled(settings.auto_refresh_enabled);
+    }
+    if (settings.auto_refresh_seconds !== undefined) {
+      setAutoRefreshSeconds(settings.auto_refresh_seconds);
+    }
+    if (settings.auto_rotate_enabled !== undefined) {
+      setAutoRotateEnabled(settings.auto_rotate_enabled);
+    }
+    if (settings.auto_rotate_seconds !== undefined) {
+      setAutoRotateSeconds(settings.auto_rotate_seconds);
+    }
   }, [settings.monitor_urls, settings.edenai_display, urlsText, edenaiValues.length]);
 
   // Track whether there are unsaved changes in the monitoring fields.
@@ -98,7 +115,11 @@ export default function Settings() {
     edenaiValues.slice().sort().join(',') !== originalEdenaiValues.join(',') ||
     periodDays !== originalPeriod;
   const hasUnsaved =
-    edenaiKey.trim() !== '' || urlsText.trim() !== originalUrls || edenaiChanged;
+    edenaiKey.trim() !== '' || urlsText.trim() !== originalUrls || edenaiChanged ||
+    autoRefreshEnabled !== (settings.auto_refresh_enabled === true) ||
+    autoRefreshSeconds !== (settings.auto_refresh_seconds ?? 60) ||
+    autoRotateEnabled !== (settings.auto_rotate_enabled === true) ||
+    autoRotateSeconds !== (settings.auto_rotate_seconds ?? 30);
 
   const handleSaveMonitoring = async () => {
     try {
@@ -113,6 +134,11 @@ export default function Settings() {
       patch.monitor_urls = urls;
       // EdenAI display configuration.
       patch.edenai_display = { values: edenaiValues, periodDays };
+      // Auto refresh / rotate configuration.
+      patch.auto_refresh_enabled = autoRefreshEnabled;
+      patch.auto_refresh_seconds = autoRefreshSeconds;
+      patch.auto_rotate_enabled = autoRotateEnabled;
+      patch.auto_rotate_seconds = autoRotateSeconds;
       await saveSettings(patch as never);
       setEdenaiKey('');
       showMessage('success', 'Einstellungen gespeichert.');
@@ -403,6 +429,86 @@ export default function Settings() {
             <span className={styles.toggleTrack} />
             <span className={styles.toggleThumb} />
           </div>
+        </div>
+      </section>
+
+      {/* Daten */}
+      <section id="daten" className={styles.section}>
+        <h2 className={styles.sectionTitle}>Daten</h2>
+        <p className={styles.sectionHint}>
+          Automatisches Aktualisieren und Wechseln der Ansichten.
+        </p>
+
+        <div className={styles.row}>
+          <div className={styles.rowText}>
+            <span className={styles.rowLabel}>Automatisch aktualisieren</span>
+            <span className={styles.rowHint}>
+              Daten (Tasks, Kalender, Stats) regelmäßig neu laden
+            </span>
+          </div>
+          <div className={styles.toggle}>
+            <input
+              type="checkbox"
+              className={styles.toggleInput}
+              checked={autoRefreshEnabled}
+              onChange={(e) => setAutoRefreshEnabled(e.target.checked)}
+            />
+            <span className={styles.toggleTrack} />
+            <span className={styles.toggleThumb} />
+          </div>
+        </div>
+
+        <div className={styles.row}>
+          <span className={styles.rowLabel}>Aktualisieren alle</span>
+          <select
+            className={styles.select}
+            style={{ minWidth: 180 }}
+            value={autoRefreshSeconds}
+            onChange={(e) => setAutoRefreshSeconds(Number(e.target.value))}
+            disabled={!autoRefreshEnabled}
+          >
+            <option value={15}>15 Sekunden</option>
+            <option value={30}>30 Sekunden</option>
+            <option value={60}>1 Minute</option>
+            <option value={120}>2 Minuten</option>
+            <option value={300}>5 Minuten</option>
+          </select>
+        </div>
+
+        <div className={styles.row}>
+          <div className={styles.rowText}>
+            <span className={styles.rowLabel}>Automatisch wechseln</span>
+            <span className={styles.rowHint}>
+              Zwischen Dashboard und Stats umschalten
+            </span>
+          </div>
+          <div className={styles.toggle}>
+            <input
+              type="checkbox"
+              className={styles.toggleInput}
+              checked={autoRotateEnabled}
+              onChange={(e) => setAutoRotateEnabled(e.target.checked)}
+            />
+            <span className={styles.toggleTrack} />
+            <span className={styles.toggleThumb} />
+          </div>
+        </div>
+
+        <div className={styles.row}>
+          <span className={styles.rowLabel}>Wechseln alle</span>
+          <select
+            className={styles.select}
+            style={{ minWidth: 180 }}
+            value={autoRotateSeconds}
+            onChange={(e) => setAutoRotateSeconds(Number(e.target.value))}
+            disabled={!autoRotateEnabled}
+          >
+            <option value={15}>15 Sekunden</option>
+            <option value={30}>30 Sekunden</option>
+            <option value={60}>1 Minute</option>
+            <option value={120}>2 Minuten</option>
+            <option value={300}>5 Minuten</option>
+          </select>
         </div>
       </section>
 

@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { fetchMonitor } from '../../api';
 import type { MonitorResponse } from '../../types';
-import { REFRESH } from '../../constants';
+import { autoRefreshMs } from '../../constants';
 import { onRefresh } from '../../refresh';
+import Clock from '../widgets/Clock';
+import { useSettings } from '../../state/hooks';
+import { SettingsContext } from '../../state/SettingsContext';
 import styles from './Stats.module.css';
 
 /** Format a balance with its currency, e.g. "12.34 USD". */
@@ -31,7 +34,46 @@ function hostOf(url: string): string {
   }
 }
 
+/**
+ * Trend arrow + percent change for a value compared to the previous reading.
+ * Higher → green up arrow, lower → red down arrow. Renders nothing when
+ * there is no comparable delta (e.g. first reading, or balance).
+ */
+function TrendArrow({
+  delta,
+  percent,
+}: {
+  delta: number | undefined;
+  percent?: number | null;
+}) {
+  if (delta === undefined || delta === 0) return null;
+  const up = delta > 0;
+  const pctText =
+    percent === null || percent === undefined
+      ? null
+      : `${percent > 0 ? '+' : ''}${percent.toFixed(0)} %`;
+  return (
+    <span className={styles.trendArrow}>
+      <span
+        className={`${styles.trendIcon} ${up ? styles.trendUp : styles.trendDown}`}
+        aria-hidden="true"
+      >
+        {up ? '▲' : '▼'}
+      </span>
+      {pctText !== null && (
+        <span
+          className={`${styles.trendPct} ${up ? styles.trendUp : styles.trendDown}`}
+        >
+          {pctText}
+        </span>
+      )}
+    </span>
+  );
+}
+
 export default function Stats() {
+  const { settings } = useSettings();
+  const refreshMs = autoRefreshMs(settings);
   const [data, setData] = useState<MonitorResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,13 +92,16 @@ export default function Stats() {
 
   useEffect(() => {
     void load();
-    const id = window.setInterval(() => void load(), REFRESH.monitorMs);
+    let id: number | undefined;
+    if (refreshMs !== null) {
+      id = window.setInterval(() => void load(), refreshMs);
+    }
     const unsub = onRefresh(() => void load());
     return () => {
-      window.clearInterval(id);
+      if (id !== undefined) window.clearInterval(id);
       unsub();
     };
-  }, [load]);
+  }, [load, refreshMs]);
 
   const edenai = data?.edenai;
   const websites = data?.websites ?? [];
@@ -74,24 +119,88 @@ export default function Stats() {
 
   return (
     <div className={styles.page} data-scrollable>
-      <header className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>Stats &amp; Status</h1>
-        <p className={styles.pageSubtitle}>
-          EdenAI-Daten und Erreichbarkeit deiner Webseiten
-        </p>
-      </header>
-
+      <SettingsContext.Provider value={{ settings }}>
       {error && (
         <div className={styles.errorBanner}>Fehler beim Laden: {error}</div>
       )}
 
       <div className={styles.grid}>
-        {/* EdenAI stats */}
-        <section className={styles.card}>
-          <div className={styles.cardHeader}>
-            <span className={styles.cardDot} style={{ background: 'var(--accent)' }} />
-            <h2 className={styles.cardTitle}>EdenAI</h2>
+        <div className={styles.leftColumn}>
+          {/* Uhr oben links, halbe Seite wie im Dashboard */}
+          <div className={styles.statsClock}>
+            <Clock />
           </div>
+
+          {/* Webseiten-Erreichbarkeit, halbe Seite, direkt unter der Uhr */}
+          <section className={`${styles.card} ${styles.cardWebsites}`}>
+            <div className={styles.cardHeader}>
+              <h2 className={styles.cardTitle}>Webseiten-Erreichbarkeit</h2>
+              {websites.length > 0 && (
+                <span className={styles.cardMeta}>
+                  {reachableCount}/{websites.length} erreichbar
+                </span>
+              )}
+            </div>
+
+            {loading && !data ? (
+              <p className={styles.empty}>Lädt…</p>
+            ) : websites.length === 0 ? (
+              <div className={styles.unconfigured}>
+                <p className={styles.empty}>Keine Webseiten konfiguriert.</p>
+                <p className={styles.hint}>
+                  Füge unter <strong>Einstellungen → Stats &amp; Monitoring</strong> URLs hinzu.
+                </p>
+              </div>
+            ) : (
+              <>
+                <ul className={styles.websiteList}>
+                  {websites.map((w) => (
+                    <li
+                      key={w.url}
+                      className={styles.websiteRow}
+                      data-reachable={w.reachable}
+                    >
+                      <span className={styles.websiteHost}>{hostOf(w.url)}</span>
+                      <span className={styles.websiteLatency}>
+                        {formatLatency(w.latencyMs)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* Overall status of all monitored services. */}
+                <div
+                  className={styles.overallStatus}
+                  data-status={
+                    websites.length - reachableCount === 0
+                      ? 'ok'
+                      : websites.length - reachableCount === 1
+                        ? 'warn'
+                        : 'bad'
+                  }
+                >
+                  <span className={styles.overallDot} aria-hidden="true" />
+                  <span className={styles.overallText}>
+                    {websites.length - reachableCount === 0
+                      ? 'Alle Dienste erreichbar'
+                      : `${websites.length - reachableCount} ${
+                          websites.length - reachableCount === 1
+                            ? 'Dienst nicht erreichbar'
+                            : 'Dienste nicht erreichbar'
+                        }`}
+                  </span>
+                </div>
+              </>
+            )}
+          </section>
+        </div>
+
+        <div className={styles.rightColumn}>
+          {/* EdenAI stats (rechts neben der Uhr) */}
+          <section className={`${styles.card} ${styles.cardEdenai}`}>
+            <div className={styles.cardHeader}>
+              <h2 className={styles.cardTitle}>EdenAI</h2>
+            </div>
 
           {loading && !data ? (
             <p className={styles.empty}>Lädt…</p>
@@ -129,6 +238,7 @@ export default function Stats() {
                   <div className={styles.balanceRow}>
                     <span className={styles.balanceValue}>
                       {formatBalance(usage.usage, 'USD')}
+                      <TrendArrow delta={usage.usageDelta} percent={usage.usagePercent} />
                     </span>
                     <span className={styles.balanceLabel}>
                       Verbrauch · letzte {edenaiDisplay.periodDays} Tage
@@ -142,6 +252,7 @@ export default function Stats() {
                   <div className={styles.balanceRow}>
                     <span className={styles.balanceValue}>
                       {new Intl.NumberFormat('de-DE').format(usage.calls)}
+                      <TrendArrow delta={usage.callsDelta} percent={usage.callsPercent} />
                     </span>
                     <span className={styles.balanceLabel}>
                       Calls · letzte {edenaiDisplay.periodDays} Tage
@@ -150,72 +261,10 @@ export default function Stats() {
                 )}
             </div>
           )}
-        </section>
-
-        {/* Website reachability */}
-        <section className={styles.card}>
-          <div className={styles.cardHeader}>
-            <span
-              className={styles.cardDot}
-              style={{
-                background:
-                  websites.length > 0 && reachableCount === websites.length
-                    ? 'var(--success)'
-                    : 'var(--muted-strong)',
-              }}
-            />
-            <h2 className={styles.cardTitle}>Webseiten-Erreichbarkeit</h2>
-            {websites.length > 0 && (
-              <span className={styles.cardMeta}>
-                {reachableCount}/{websites.length} erreichbar
-              </span>
-            )}
-          </div>
-
-          {loading && !data ? (
-            <p className={styles.empty}>Lädt…</p>
-          ) : websites.length === 0 ? (
-            <div className={styles.unconfigured}>
-              <p className={styles.empty}>Keine Webseiten konfiguriert.</p>
-              <p className={styles.hint}>
-                Füge unter <strong>Einstellungen → Stats &amp; Monitoring</strong> URLs hinzu.
-              </p>
-            </div>
-          ) : (
-            <ul className={styles.websiteList}>
-              {websites.map((w) => (
-                <li key={w.url} className={styles.websiteRow}>
-                  <span
-                    className={styles.statusDot}
-                    data-reachable={w.reachable}
-                    aria-hidden="true"
-                  />
-                  <span className={styles.websiteHost}>{hostOf(w.url)}</span>
-                  <span className={styles.websiteStatus}>
-                    {w.reachable
-                      ? `OK${w.status ? ` · ${w.status}` : ''}`
-                      : w.error || 'Nicht erreichbar'}
-                  </span>
-                  <span className={styles.websiteLatency}>
-                    {formatLatency(w.latencyMs)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+          </section>
+        </div>
       </div>
-
-      {data?.updatedAt && (
-        <footer className={styles.pageFooter}>
-          Zuletzt aktualisiert:{' '}
-          {new Intl.DateTimeFormat('de-DE', {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-          }).format(new Date(data.updatedAt))}
-        </footer>
-      )}
+      </SettingsContext.Provider>
     </div>
   );
 }

@@ -13,10 +13,19 @@ const SETTING_KEYS = [
   'edenai_key',
   'monitor_urls',
   'edenai_display',
+  'auto_rotate_enabled',
+  'auto_rotate_seconds',
+  'auto_refresh_enabled',
+  'auto_refresh_seconds',
 ];
 
 // Keys that should be returned (and accepted) as booleans.
-const BOOLEAN_KEYS = new Set(['clock_24h', 'clock_seconds']);
+const BOOLEAN_KEYS = new Set([
+  'clock_24h',
+  'clock_seconds',
+  'auto_rotate_enabled',
+  'auto_refresh_enabled',
+]);
 
 // Keys that hold secrets; only a masked placeholder is returned to the client.
 const SECRET_KEYS = new Set(['edenai_key']);

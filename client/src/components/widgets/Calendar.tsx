@@ -4,8 +4,9 @@ import { fetchCalendar } from '../../api';
 import type { CalendarEvent } from '../../types';
 import type { WidgetProps } from './index';
 import Loading from '../ui/Loading';
-import { REFRESH } from '../../constants';
+import { autoRefreshMs } from '../../constants';
 import { onRefresh } from '../../refresh';
+import { useSettingsContext } from '../../state/SettingsContext';
 import styles from './Calendar.module.css';
 
 interface CalendarProps extends WidgetProps {}
@@ -180,6 +181,10 @@ export default function Calendar({ config }: CalendarProps) {
 
   const maxEvents = Math.max(1, Number(config?.maxEvents) || 8);
 
+  // Automatic refresh interval from user settings (null = disabled).
+  const { settings } = useSettingsContext();
+  const refreshMs = autoRefreshMs(settings);
+
   // Keep the "now" line current (refresh every minute).
   useEffect(() => {
     const id = window.setInterval(() => setNow(new Date()), NOW_INTERVAL_MS);
@@ -199,13 +204,16 @@ export default function Calendar({ config }: CalendarProps) {
 
   useEffect(() => {
     void load();
-    const id = window.setInterval(() => void load(), REFRESH.calendarMs);
+    let id: number | undefined;
+    if (refreshMs !== null) {
+      id = window.setInterval(() => void load(), refreshMs);
+    }
     const unsub = onRefresh(() => void load());
     return () => {
-      window.clearInterval(id);
+      if (id !== undefined) window.clearInterval(id);
       unsub();
     };
-  }, [load]);
+  }, [load, refreshMs]);
 
   const { allDayEvents, placed, nowPosition, hourMarks, empty } = useMemo(() => {
     const today = new Date();

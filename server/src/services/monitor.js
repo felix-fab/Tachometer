@@ -1,5 +1,5 @@
 import { config } from '../config.js';
-import { getSetting } from '../db.js';
+import { getSetting, setSetting } from '../db.js';
 
 const EDENAI_BILLING_URL = 'https://api.edenai.run/v3/manage/billing/';
 const EDENAI_USAGE_URL = 'https://api.edenai.run/v3/manage/usage/';
@@ -101,7 +101,27 @@ export async function getEdenaiUsage(days = 30) {
         }
       }
     }
-    return { usage: totalCost, calls: totalCalls };
+
+    // Compare against the last measured values so the UI can show a trend.
+    // Store the current values as the new baseline for the next request.
+    const lastUsage = Number(getSetting('edenai_last_usage')) || 0;
+    const lastCalls = Number(getSetting('edenai_last_calls')) || 0;
+    setSetting('edenai_last_usage', String(totalCost));
+    setSetting('edenai_last_calls', String(totalCalls));
+
+    // Percent change vs. the previous reading (null when there is no
+    // meaningful baseline, e.g. the previous value was zero).
+    const pct = (current, last) =>
+      last > 0 ? ((current - last) / last) * 100 : null;
+
+    return {
+      usage: totalCost,
+      calls: totalCalls,
+      usageDelta: totalCost - lastUsage,
+      callsDelta: totalCalls - lastCalls,
+      usagePercent: pct(totalCost, lastUsage),
+      callsPercent: pct(totalCalls, lastCalls),
+    };
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'EdenAI nicht erreichbar.' };
   }
