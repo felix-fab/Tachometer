@@ -11,7 +11,7 @@ import styles from './Calendar.module.css';
 
 interface CalendarProps extends WidgetProps {}
 
-const NOW_INTERVAL_MS = 60_000;
+const NOW_INTERVAL_MS = 1000;
 
 /** Minutes in a full day. */
 
@@ -27,7 +27,6 @@ interface PlacedEvent {
   height: number;
   left: number;
   width: number;
-  isNow: boolean;
   startLabel: string;
 }
 
@@ -185,7 +184,9 @@ export default function Calendar({ config }: CalendarProps) {
   const { settings } = useSettingsContext();
   const refreshMs = autoRefreshMs(settings);
 
-  // Keep the "now" line current (refresh every minute).
+  // Keep the "now" line current — update every second so the line and its
+  // time label always match the real time (and the big clock), never lagging
+  // a minute behind between updates.
   useEffect(() => {
     const id = window.setInterval(() => setNow(new Date()), NOW_INTERVAL_MS);
     return () => window.clearInterval(id);
@@ -215,14 +216,10 @@ export default function Calendar({ config }: CalendarProps) {
     };
   }, [load, refreshMs]);
 
-  const { allDayEvents, placed, nowPosition, hourMarks, empty } = useMemo(() => {
-    // Use the "now" state as the single source of truth for both the current
-    // time (for filtering) and the position of the "now" line. This keeps the
-    // line and its time label in sync — otherwise a re-run caused by a data
-    // refresh would compute the line from a freshly created Date while the
-    // label still used the older "now" state, making them disagree.
-    const today = now;
-    const nowPosition = timePosition(now);
+  const nowPosition = timePosition(now);
+
+  const { allDayEvents, placed, hourMarks, empty } = useMemo(() => {
+    const today = new Date();
 
     const todays = events.filter((e) => overlapsDate(e, today)).slice(0, maxEvents);
 
@@ -267,7 +264,6 @@ export default function Calendar({ config }: CalendarProps) {
         height: p.height,
         left: (p.col / p.cols) * 100,
         width: 100 / p.cols,
-        isNow: nowPosition >= p.top && nowPosition <= p.top + p.height,
         startLabel: formatTime(p.event.start),
       });
     }
@@ -275,11 +271,10 @@ export default function Calendar({ config }: CalendarProps) {
     return {
       allDayEvents: allDay,
       placed,
-      nowPosition,
       hourMarks,
       empty: todays.length === 0,
     };
-  }, [events, maxEvents, now]);
+  }, [events, maxEvents]);
 
   return (
     <div className={styles.panel}>
@@ -333,30 +328,34 @@ export default function Calendar({ config }: CalendarProps) {
             ))}
 
             <div className={styles.lane} style={{ left: '3.25rem' }}>
-              {placed.map((p) => (
-                <button
-                  key={p.event.id}
-                  type="button"
-                  className={`${styles.event} ${p.isNow ? styles.eventNow : ''}`}
-                  style={{
-                    top: `${p.top}%`,
-                    height: `${p.height}%`,
-                    left: `${p.left}%`,
-                    width: `${p.width}%`,
-                  }}
-                  title={p.event.summary}
-                  onClick={() => setSelectedEvent(p.event)}
-                >
-                  <div
-                    className={styles.eventColorBar}
-                    style={{ background: eventColor(p.event) }}
-                  />
-                  <div className={styles.eventBody}>
-                    <div className={styles.eventSummary}>{p.event.summary}</div>
-                    <div className={styles.eventTime}>{p.startLabel}</div>
-                  </div>
-                </button>
-              ))}
+              {placed.map((p) => {
+                const isNow =
+                  nowPosition >= p.top && nowPosition <= p.top + p.height;
+                return (
+                  <button
+                    key={p.event.id}
+                    type="button"
+                    className={`${styles.event} ${isNow ? styles.eventNow : ''}`}
+                    style={{
+                      top: `${p.top}%`,
+                      height: `${p.height}%`,
+                      left: `${p.left}%`,
+                      width: `${p.width}%`,
+                    }}
+                    title={p.event.summary}
+                    onClick={() => setSelectedEvent(p.event)}
+                  >
+                    <div
+                      className={styles.eventColorBar}
+                      style={{ background: eventColor(p.event) }}
+                    />
+                    <div className={styles.eventBody}>
+                      <div className={styles.eventSummary}>{p.event.summary}</div>
+                      <div className={styles.eventTime}>{p.startLabel}</div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
 
             <div className={styles.nowLine}>
