@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useSettingsContext } from '../../state/SettingsContext';
+import { useClock } from '../../state/ClockContext';
 import type { WidgetProps } from './index';
 import styles from './Clock.module.css';
 
@@ -41,14 +42,9 @@ export default function Clock(_props: ClockProps) {
   const { settings } = useSettingsContext();
   const clockSeconds = settings.clock_seconds === true;
 
-  const [now, setNow] = useState<Date>(() => new Date());
-
-  useEffect(() => {
-    // Update every second when seconds are shown, otherwise every 30s.
-    const intervalMs = clockSeconds ? 1000 : 30000;
-    const id = window.setInterval(() => setNow(new Date()), intervalMs);
-    return () => window.clearInterval(id);
-  }, [clockSeconds]);
+  // Use the shared clock so the big display and the calendar line always
+  // show the exact same time and switch minute at the same instant.
+  const { now } = useClock();
 
   const time = useMemo(() => formatTime(now, clockSeconds), [now, clockSeconds]);
   const date = useMemo(() => formatDate(now), [now]);

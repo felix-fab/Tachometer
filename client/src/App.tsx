@@ -5,6 +5,7 @@ import Stats from './components/layout/Stats';
 import NavBar from './components/layout/NavBar';
 import { useHashRoute, navigate } from './router';
 import { useSettings } from './state/hooks';
+import { ClockProvider } from './state/ClockContext';
 import { applyTheme } from './styles/theme';
 import './styles/global.css';
 import styles from './App.module.css';
@@ -59,21 +60,23 @@ export default function App() {
   }, [autoRotateEnabled, autoRotateSeconds]);
 
   return (
-    <div className={styles.shell}>
-      <NavBar items={NAV_ITEMS} activePath={activePath} />
-      {/* Keep all views mounted and hide the inactive ones so their
-          loaded data is cached across tab switches (no reload). */}
-      <main className={styles.content}>
-        <div className={styles.view} hidden={activePath !== '/'}>
-          <Dashboard />
-        </div>
-        <div className={styles.view} hidden={activePath !== '/stats'}>
-          <Stats />
-        </div>
-        <div className={styles.view} hidden={activePath !== '/settings'}>
-          <Settings />
-        </div>
-      </main>
-    </div>
+    <ClockProvider>
+      <div className={styles.shell}>
+        <NavBar items={NAV_ITEMS} activePath={activePath} />
+        {/* Keep all views mounted and hide the inactive ones so their
+            loaded data is cached across tab switches (no reload). */}
+        <main className={styles.content}>
+          <div className={styles.view} hidden={activePath !== '/'}>
+            <Dashboard />
+          </div>
+          <div className={styles.view} hidden={activePath !== '/stats'}>
+            <Stats />
+          </div>
+          <div className={styles.view} hidden={activePath !== '/settings'}>
+            <Settings />
+          </div>
+        </main>
+      </div>
+    </ClockProvider>
   );
 }

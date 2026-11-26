@@ -7,11 +7,10 @@ import Loading from '../ui/Loading';
 import { autoRefreshMs } from '../../constants';
 import { onRefresh } from '../../refresh';
 import { useSettingsContext } from '../../state/SettingsContext';
+import { useClock } from '../../state/ClockContext';
 import styles from './Calendar.module.css';
 
 interface CalendarProps extends WidgetProps {}
-
-const NOW_INTERVAL_MS = 1000;
 
 /** Minutes in a full day. */
 
@@ -163,7 +162,6 @@ function layoutColumns<T extends { startPos: number; endPos: number }>(
 export default function Calendar({ config }: CalendarProps) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [now, setNow] = useState<Date>(() => new Date());
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
   const closePopup = useCallback(() => setSelectedEvent(null), []);
@@ -184,13 +182,9 @@ export default function Calendar({ config }: CalendarProps) {
   const { settings } = useSettingsContext();
   const refreshMs = autoRefreshMs(settings);
 
-  // Keep the "now" line current — update every second so the line and its
-  // time label always match the real time (and the big clock), never lagging
-  // a minute behind between updates.
-  useEffect(() => {
-    const id = window.setInterval(() => setNow(new Date()), NOW_INTERVAL_MS);
-    return () => window.clearInterval(id);
-  }, []);
+  // Use the shared clock so the "now" line and its time label always match
+  // the big clock exactly and switch minute at the same instant.
+  const { now } = useClock();
 
   const load = useCallback(async () => {
     try {
