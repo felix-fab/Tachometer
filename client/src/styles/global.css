@@ -96,6 +96,14 @@ button {
   cursor: pointer;
 }
 
+/* Kiosk mode (Raspberry Pi): hide the mouse cursor everywhere until the
+   first real interaction. `cursor: none` is more reliable than unclutter
+   for Chromium, which otherwise keeps the pointer visible until a click. */
+[data-kiosk],
+[data-kiosk] * {
+  cursor: none !important;
+}
+
 input,
 select {
   font: inherit;

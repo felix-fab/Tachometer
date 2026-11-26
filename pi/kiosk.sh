@@ -7,6 +7,14 @@ export DISPLAY=:0
 
 DASHBOARD_URL="${1:-http://localhost:3001/}"
 
+# Signal für die Web-App: im Kiosk-Modus den Mauszeiger über CSS ausblenden.
+# Die App erkennt das und blendet den Cursor zuverlässig aus (unabhängig von
+# Chromium/unclutter, die den Cursor bis zum ersten Klick sichtbar lassen).
+case "$DASHBOARD_URL" in
+  *\?*) DASHBOARD_URL="${DASHBOARD_URL}&kiosk=1" ;;
+  *)    DASHBOARD_URL="${DASHBOARD_URL}?kiosk=1" ;;
+esac
+
 # Cursor ausblenden. Bevorzugt unclutter-xfixes (startet ausgeblendet und
 # zeigt den Cursor nur bei echter Mausbewegung – zuverlässig im Kiosk).
 # Fallback: klassisches unclutter mit Idle-Zeit 0 (sofort ausblenden).

@@ -22,6 +22,12 @@ export default function App() {
   useEffect(() => {
     // Apply sensible theme defaults before settings load to avoid a flash.
     applyTheme();
+    // Kiosk mode (Raspberry Pi): hide the mouse cursor via CSS until the
+    // first real interaction, because Chromium/unclutter otherwise keep the
+    // pointer visible until the user clicks.
+    if (new URLSearchParams(window.location.search).get('kiosk') === '1') {
+      document.documentElement.setAttribute('data-kiosk', '');
+    }
   }, []);
 
   // Map the hash route to the active tab path.
