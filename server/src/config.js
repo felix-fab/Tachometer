@@ -1,22 +1,60 @@
 import 'dotenv/config';
 import { getSetting } from './db.js';
 
-/** Parse a stored monitor_urls value (JSON array of strings) into a URL list. */
+/** Derive a display title from a URL host, e.g. "https://example.com" → "Example". */
+function titleFromUrl(url) {
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, '');
+    return host
+      .split('.')
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+  } catch {
+    return url;
+  }
+}
+
+/** Parse a monitor_urls entry that may be a plain URL string or an object {title, url}. */
+function normalizeMonitorEntry(entry) {
+  if (entry && typeof entry === 'object') {
+    const url = String(entry.url || '').trim();
+    if (!url) return null;
+    const title = String(entry.title || '').trim();
+    return { title: title || titleFromUrl(url), url };
+  }
+  const raw = String(entry || '').trim();
+  if (!raw) return null;
+  // Support "Titel | URL" on a single line for convenience.
+  const pipe = raw.indexOf('|');
+  if (pipe !== -1) {
+    const title = raw.slice(0, pipe).trim();
+    const url = raw.slice(pipe + 1).trim();
+    if (url) return { title: title || titleFromUrl(url), url };
+  }
+  return { title: titleFromUrl(raw), url: raw };
+}
+
+/** Parse a stored monitor_urls value (JSON array) into a list of {title, url}. */
 function parseMonitorUrls(raw) {
-  if (Array.isArray(raw)) return raw.map((u) => String(u).trim()).filter(Boolean);
-  if (typeof raw === 'string') {
+  let list = [];
+  if (Array.isArray(raw)) list = raw;
+  else if (typeof raw === 'string') {
     try {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed.map((u) => String(u).trim()).filter(Boolean);
+      if (Array.isArray(parsed)) list = parsed;
+      else if (parsed && typeof parsed === 'object') list = [parsed];
     } catch {
       /* fall through to comma-split */
     }
-    return raw
-      .split(',')
-      .map((u) => u.trim())
-      .filter(Boolean);
+    if (list.length === 0) {
+      list = raw
+        .split(',')
+        .map((u) => u.trim())
+        .filter(Boolean);
+    }
   }
-  return [];
+  return list.map(normalizeMonitorEntry).filter(Boolean);
 }
 
 const storedEdenaiKey = getSetting('edenai_key') || '';

@@ -5,6 +5,7 @@ import {
   OAUTH_START,
 } from '../../api';
 import { useSettings, useWidgets } from '../../state/hooks';
+import { triggerRefresh } from '../../refresh';
 import { widgetIds } from '../widgets';
 import type { AuthStatus, ProviderStatus, Widget, WidgetConfig } from '../../types';
 import styles from './Settings.module.css';
@@ -15,6 +16,59 @@ interface Message {
 }
 
 const ACCENT_PRESETS = ['#e8862a', '#f59e0b', '#ef4444', '#a855f7', '#22c55e', '#3b82f6'];
+
+/** Derive a display title from a URL host, e.g. "https://example.com" → "Example". */
+function titleFromUrl(url: string): string {
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, '');
+    return host
+      .split('.')
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+  } catch {
+    return url;
+  }
+}
+
+/**
+ * Convert the stored monitor list (array of {title, url} objects, possibly
+ * legacy plain strings) into the textarea format "Titel | URL" (one per line).
+ */
+function monitorToText(entries: unknown): string {
+  if (!Array.isArray(entries)) return '';
+  return entries
+    .map((entry) => {
+      if (entry && typeof entry === 'object') {
+        const title = String((entry as { title?: string }).title || '').trim();
+        const url = String((entry as { url?: string }).url || '').trim();
+        if (!url) return '';
+        return title ? `${title} | ${url}` : url;
+      }
+      return String(entry || '').trim();
+    })
+    .filter(Boolean)
+    .join('\n');
+}
+
+/** Convert the textarea content ("Titel | URL" or just "URL" per line) into
+ *  the stored format: an array of {title, url} objects. */
+function textToMonitor(text: string): { title: string; url: string }[] {
+  return text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const pipe = line.indexOf('|');
+      if (pipe !== -1) {
+        const title = line.slice(0, pipe).trim();
+        const url = line.slice(pipe + 1).trim();
+        if (url) return { title: title || titleFromUrl(url), url };
+      }
+      return { title: titleFromUrl(line), url: line };
+    })
+    .filter((entry) => entry.url);
+}
 
 /** Sections shown in the side navigation, in order. */
 const SECTIONS = [
@@ -96,7 +150,7 @@ export default function Settings() {
     if (initializedRef.current || loading) return;
     initializedRef.current = true;
     if (settings.monitor_urls?.length) {
-      setUrlsText(settings.monitor_urls.join('\n'));
+      setUrlsText(monitorToText(settings.monitor_urls));
     }
     if (settings.edenai_display) {
       setEdenaiValues(settings.edenai_display.values);
@@ -117,7 +171,7 @@ export default function Settings() {
   }, [settings, loading]);
 
   // Track whether there are unsaved changes in the monitoring fields.
-  const originalUrls = (settings.monitor_urls || []).join('\n').trim();
+  const originalUrls = monitorToText(settings.monitor_urls).trim();
   const originalEdenaiValues = settings.edenai_display?.values?.slice().sort() ?? [];
   const originalPeriod = settings.edenai_display?.periodDays ?? 30;
   const edenaiChanged =
@@ -135,12 +189,8 @@ export default function Settings() {
       const patch: Record<string, unknown> = {};
       // Only send a new EdenAI key if the user typed one (avoid overwriting with empty).
       if (edenaiKey.trim()) patch.edenai_key = edenaiKey.trim();
-      // Normalize the URLs textarea into a clean list.
-      const urls = urlsText
-        .split('\n')
-        .map((u) => u.trim())
-        .filter(Boolean);
-      patch.monitor_urls = urls;
+      // Normalize the URLs textarea into the stored {title, url} format.
+      patch.monitor_urls = textToMonitor(urlsText);
       // EdenAI display configuration.
       patch.edenai_display = { values: edenaiValues, periodDays };
       // Auto refresh / rotate configuration.
@@ -151,6 +201,9 @@ export default function Settings() {
       await saveSettings(patch as never);
       setEdenaiKey('');
       showMessage('success', 'Einstellungen gespeichert.');
+      // Reload all data-driven views (calendar, Vikunja, stats) so the
+      // changes (monitored sites, intervals, …) are applied immediately.
+      triggerRefresh();
     } catch (err) {
       showMessage('error', `Speichern fehlgeschlagen: ${err instanceof Error ? err.message : ''}`);
     }
@@ -176,6 +229,7 @@ export default function Settings() {
     try {
       await saveWidget(widget.id, { enabled });
       showMessage('success', `Widget "${widget.id}" ${enabled ? 'aktiviert' : 'deaktiviert'}.`);
+      triggerRefresh();
     } catch (err) {
       showMessage('error', `Aktualisieren fehlgeschlagen: ${err instanceof Error ? err.message : ''}`);
     }
@@ -185,6 +239,7 @@ export default function Settings() {
     try {
       await saveWidget(widget.id, { config });
       showMessage('success', 'Widget konfiguriert.');
+      triggerRefresh();
     } catch (err) {
       showMessage('error', `Konfiguration fehlgeschlagen: ${err instanceof Error ? err.message : ''}`);
     }
@@ -608,12 +663,15 @@ export default function Settings() {
             id="monitor-urls"
             className={styles.textarea}
             rows={6}
-            placeholder={'https://beispiel.de\nhttps://andere-seite.de'}
+            placeholder={'Meine Seite | https://beispiel.de\nhttps://andere-seite.de'}
             value={urlsText}
             onChange={(e) => setUrlsText(e.target.value)}
             spellCheck={false}
           />
-          <div className={styles.hint}>Eine URL pro Zeile.</div>
+          <div className={styles.hint}>
+            Eine Zeile pro Webseite. Optional als <code>Titel | URL</code> – ohne
+            Titel wird der Name aus der Domain abgeleitet.
+          </div>
         </div>
       </section>
 

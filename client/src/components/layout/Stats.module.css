@@ -250,10 +250,45 @@
   border-color: rgba(239, 68, 68, 0.5);
 }
 
-.websiteHost {
+.websiteIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--panel-border);
+  overflow: hidden;
+}
+
+.websiteIcon img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.websiteInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.websiteTitle {
   font-size: 1rem;
   font-weight: 600;
   color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.websiteUrl {
+  font-size: 0.72rem;
+  color: var(--muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

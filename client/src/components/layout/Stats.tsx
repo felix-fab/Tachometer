@@ -34,6 +34,44 @@ function hostOf(url: string): string {
   }
 }
 
+/** The site's origin (protocol + host), e.g. "https://example.com". */
+function originOf(url: string): string {
+  try {
+    const u = new URL(url);
+    return u.origin || url;
+  } catch {
+    return url;
+  }
+}
+
+/**
+ * Website favicon with a fallback chain: load the site's own /favicon.ico
+ * first (more reliable for custom domains), then fall back to Google's
+ * favicon service, then hide the image entirely.
+ */
+function SiteIcon({ url }: { url: string }) {
+  const origin = originOf(url);
+  const fallback = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(
+    hostOf(url)
+  )}&sz=64`;
+  const [src, setSrc] = useState(`${origin}/favicon.ico`);
+
+  return (
+    <img
+      src={src}
+      alt=""
+      loading="lazy"
+      width={20}
+      height={20}
+      onError={() => {
+        if (src !== fallback) setSrc(fallback);
+        else setSrc('');
+      }}
+      style={src === '' ? { display: 'none' } : undefined}
+    />
+  );
+}
+
 /**
  * Trend arrow + percent change for a value compared to the previous reading.
  * Higher → green up arrow, lower → red down arrow. Renders nothing when
@@ -160,7 +198,15 @@ export default function Stats() {
                       className={styles.websiteRow}
                       data-reachable={w.reachable}
                     >
-                      <span className={styles.websiteHost}>{hostOf(w.url)}</span>
+                      <span className={styles.websiteIcon}>
+                        <SiteIcon url={w.url} />
+                      </span>
+                      <span className={styles.websiteInfo}>
+                        <span className={styles.websiteTitle}>
+                          {w.title || hostOf(w.url)}
+                        </span>
+                        <span className={styles.websiteUrl}>{hostOf(w.url)}</span>
+                      </span>
                       <span className={styles.websiteLatency}>
                         {formatLatency(w.latencyMs)}
                       </span>

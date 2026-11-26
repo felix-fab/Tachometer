@@ -9,14 +9,40 @@ function edenaiKey() {
   return getSetting('edenai_key') || config.edenai.managementKey || '';
 }
 
-/** Resolve the list of monitored URLs at runtime (from the database only). */
+/** Derive a display title from a URL host, e.g. "https://example.com" → "Example". */
+function titleFromUrl(url) {
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, '');
+    return host
+      .split('.')
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+  } catch {
+    return url;
+  }
+}
+
+/** Resolve the list of monitored websites at runtime (from the database only).
+ *  Returns an array of { title, url } objects. */
 function monitorUrls() {
   const stored = getSetting('monitor_urls');
   if (stored) {
     try {
       const parsed = JSON.parse(stored);
       if (Array.isArray(parsed)) {
-        return parsed.map((u) => String(u).trim()).filter(Boolean);
+        return parsed
+          .map((entry) => {
+            if (entry && typeof entry === 'object') {
+              const url = String(entry.url || '').trim();
+              if (!url) return null;
+              const title = String(entry.title || '').trim();
+              return { title: title || titleFromUrl(url), url };
+            }
+            const url = String(entry || '').trim();
+            return url ? { title: titleFromUrl(url), url } : null;
+          })
+          .filter(Boolean);
       }
     } catch {
       /* fall through */
@@ -179,8 +205,10 @@ export async function getEdenaiBalance() {
 /**
  * Probe a single URL and return its reachability status.
  * A reachable site responds with a 2xx/3xx status; anything else is flagged.
+ * @param {{ title: string, url: string }} site
  */
-async function probeUrl(url) {
+async function probeUrl(site) {
+  const { title, url } = site;
   const startedAt = Date.now();
   try {
     const res = await fetch(url, {
@@ -191,6 +219,7 @@ async function probeUrl(url) {
     });
     const latencyMs = Date.now() - startedAt;
     return {
+      title,
       url,
       reachable: res.ok || res.status < 400,
       status: res.status,
@@ -198,6 +227,7 @@ async function probeUrl(url) {
     };
   } catch (err) {
     return {
+      title,
       url,
       reachable: false,
       status: null,

@@ -27,6 +27,9 @@ const BOOLEAN_KEYS = new Set([
   'auto_refresh_enabled',
 ]);
 
+// Keys that should be returned as numbers.
+const NUMBER_KEYS = new Set(['auto_refresh_seconds', 'auto_rotate_seconds']);
+
 // Keys that hold secrets; only a masked placeholder is returned to the client.
 const SECRET_KEYS = new Set(['edenai_key']);
 
@@ -51,6 +54,9 @@ router.get('/', (req, res) => {
     if (value === null) continue;
     if (BOOLEAN_KEYS.has(key)) {
       result[key] = value === 'true' || value === true;
+    } else if (NUMBER_KEYS.has(key)) {
+      const num = Number(value);
+      result[key] = Number.isFinite(num) ? num : null;
     } else if (SECRET_KEYS.has(key)) {
       result[key] = maskSecret(value);
     } else if (ARRAY_KEYS.has(key)) {

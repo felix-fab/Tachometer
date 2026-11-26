@@ -3,7 +3,8 @@
 
 /** Clamp a refresh interval (seconds) into a sane range. */
 export function clampRefreshSeconds(value: number): number {
-  return Math.max(10, Math.min(3600, Number.isFinite(value) ? value : 60));
+  const num = Number(value);
+  return Math.max(10, Math.min(3600, Number.isFinite(num) ? num : 60));
 }
 
 /**
@@ -16,5 +17,5 @@ export function autoRefreshMs(settings: {
   auto_refresh_seconds?: number;
 }): number | null {
   if (settings.auto_refresh_enabled !== true) return null;
-  return clampRefreshSeconds(settings.auto_refresh_seconds ?? 60) * 1000;
+  return clampRefreshSeconds(Number(settings.auto_refresh_seconds ?? 60)) * 1000;
 }

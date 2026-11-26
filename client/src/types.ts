@@ -71,8 +71,8 @@ export interface Settings {
   google_calendars?: string[];
   /** Masked EdenAI management key (only last 4 chars visible). */
   edenai_key?: string;
-  /** List of monitored website URLs. */
-  monitor_urls?: string[];
+  /** List of monitored websites (with optional display titles). */
+  monitor_urls?: (string | MonitorSite)[];
   /** Which EdenAI values to show and over what period. */
   edenai_display?: EdenaiDisplayConfig;
   /** Whether the dashboard/stats auto-rotation is enabled. */
@@ -106,11 +106,19 @@ export interface Health {
 
 /** A single website reachability probe result. */
 export interface WebsiteProbe {
+  /** Display title for the site (may be derived from the URL host). */
+  title: string;
   url: string;
   reachable: boolean;
   status: number | null;
   latencyMs: number;
   error?: string;
+}
+
+/** A monitored website with an optional display title. */
+export interface MonitorSite {
+  title?: string;
+  url: string;
 }
 
 /** EdenAI credit balance result. */
