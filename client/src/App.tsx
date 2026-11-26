@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import Dashboard from './components/layout/Dashboard';
 import Settings from './components/layout/Settings';
 import Stats from './components/layout/Stats';
@@ -14,11 +14,6 @@ const NAV_ITEMS = [
   { path: '/stats', label: 'Stats' },
   { path: '/settings', label: 'Einstellungen' },
 ];
-
-/** Toggle between dashboard and stats (auto-rotation). */
-function toggleView(current: string): string {
-  return current === '/stats' ? '/' : '/stats';
-}
 
 export default function App() {
   const route = useHashRoute();
@@ -40,16 +35,22 @@ export default function App() {
     Math.min(600, Number(settings.auto_rotate_seconds) || 30)
   );
 
-  const rotate = useCallback(() => {
-    if (activePath === '/settings') return;
-    navigate(toggleView(activePath));
-  }, [activePath]);
+  // Keep the current path in a ref so the rotation timer (set up once below)
+  // always sees the latest route. The interval must NOT depend on the active
+  // path, otherwise it would be torn down and restarted on every switch,
+  // resetting the countdown and causing unreliable rotation timing.
+  const activePathRef = useRef(activePath);
+  activePathRef.current = activePath;
 
   useEffect(() => {
     if (!autoRotateEnabled) return;
-    const id = window.setInterval(rotate, autoRotateSeconds * 1000);
+    const id = window.setInterval(() => {
+      const current = activePathRef.current;
+      if (current === '/settings') return;
+      navigate(current === '/stats' ? '/' : '/stats');
+    }, autoRotateSeconds * 1000);
     return () => window.clearInterval(id);
-  }, [autoRotateEnabled, autoRotateSeconds, rotate]);
+  }, [autoRotateEnabled, autoRotateSeconds]);
 
   return (
     <div className={styles.shell}>

@@ -216,8 +216,13 @@ export default function Calendar({ config }: CalendarProps) {
   }, [load, refreshMs]);
 
   const { allDayEvents, placed, nowPosition, hourMarks, empty } = useMemo(() => {
-    const today = new Date();
-    const nowPosition = timePosition(today);
+    // Use the "now" state as the single source of truth for both the current
+    // time (for filtering) and the position of the "now" line. This keeps the
+    // line and its time label in sync — otherwise a re-run caused by a data
+    // refresh would compute the line from a freshly created Date while the
+    // label still used the older "now" state, making them disagree.
+    const today = now;
+    const nowPosition = timePosition(now);
 
     const todays = events.filter((e) => overlapsDate(e, today)).slice(0, maxEvents);
 
@@ -315,10 +320,12 @@ export default function Calendar({ config }: CalendarProps) {
             className={styles.timeline}
             style={{ '--now': `${nowPosition}%` } as React.CSSProperties}
           >
-            {hourMarks.map((mark) => (
+            {hourMarks.map((mark, i) => (
               <div
                 key={mark.label}
-                className={styles.hourMark}
+                className={`${styles.hourMark} ${
+                  i === 0 ? styles.hourMarkFirst : ''
+                } ${i === hourMarks.length - 1 ? styles.hourMarkLast : ''}`}
                 style={{ top: `${mark.position}%` }}
               >
                 <span className={styles.hourLabel}>{mark.label}</span>
@@ -353,9 +360,8 @@ export default function Calendar({ config }: CalendarProps) {
             </div>
 
             <div className={styles.nowLine}>
-              <span className={styles.nowDot} />
               <span className={styles.nowLabel}>
-                Jetzt · {formatTime(now.toISOString())}
+                {formatTime(now.toISOString())}
               </span>
             </div>
           </div>

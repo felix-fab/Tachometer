@@ -1,8 +1,13 @@
 // Central state hooks for settings and widgets.
 // Kept intentionally simple: each hook loads its data and exposes
 // load/save helpers. Saving theme/accent also applies CSS variables.
+//
+// Settings are shared through a provider so every component (App, Settings,
+// Dashboard, Stats) sees the same, up-to-date values as soon as they are
+// saved — otherwise the auto-rotation timer would keep using stale values.
 
-import { useCallback, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import {
   fetchSettings,
   fetchWidgets,
@@ -23,7 +28,10 @@ export interface UseSettingsResult {
   set: (patch: SettingsPatch) => void;
 }
 
-export function useSettings(): UseSettingsResult {
+const SettingsContext = createContext<UseSettingsResult | null>(null);
+
+/** Provides the shared settings state to the whole app. */
+export function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<Settings>({});
   const [loading, setLoading] = useState(true);
 
@@ -46,22 +54,36 @@ export function useSettings(): UseSettingsResult {
   const save = useCallback(
     async (patch: SettingsPatch) => {
       await apiUpdateSettings(patch);
-      setSettings((prev) => ({ ...prev, ...patch }));
-      if (patch.theme !== undefined || patch.accent !== undefined) {
-        applyTheme(
-          patch.theme ?? settings.theme,
-          patch.accent ?? settings.accent
-        );
-      }
+      setSettings((prev) => {
+        const next = { ...prev, ...patch };
+        if (patch.theme !== undefined || patch.accent !== undefined) {
+          // Keep the other value when only one of theme/accent is being saved.
+          applyTheme(patch.theme ?? next.theme, patch.accent ?? next.accent);
+        }
+        return next;
+      });
     },
-    [settings.theme, settings.accent]
+    []
   );
 
   const set = useCallback((patch: SettingsPatch) => {
     setSettings((prev) => ({ ...prev, ...patch }));
   }, []);
 
-  return { settings, loading, refresh, save, set };
+  const value = useMemo<UseSettingsResult>(
+    () => ({ settings, loading, refresh, save, set }),
+    [settings, loading, refresh, save, set]
+  );
+
+  return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
+}
+
+export function useSettings(): UseSettingsResult {
+  const ctx = useContext(SettingsContext);
+  if (!ctx) {
+    throw new Error('useSettings must be used within a SettingsProvider');
+  }
+  return ctx;
 }
 
 export interface UseWidgetsResult {

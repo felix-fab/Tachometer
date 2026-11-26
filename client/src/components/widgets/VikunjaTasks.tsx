@@ -199,7 +199,14 @@ export default function VikunjaTasks(_props: VikunjaTasksProps) {
             >
               <div className={styles.popupTop}>
                 {selected.project && (
-                  <span className={styles.popupProject}>
+                  <span
+                    className={styles.popupProject}
+                    style={
+                      selected.projectColor
+                        ? { color: selected.projectColor }
+                        : undefined
+                    }
+                  >
                     <span
                       className={styles.popupProjectDot}
                       style={

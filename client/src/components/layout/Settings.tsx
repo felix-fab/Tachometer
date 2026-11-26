@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   disconnectProvider,
   fetchAuthStatus,
@@ -44,7 +44,7 @@ function providerStatusLabel(status: ProviderStatus): { label: string; cls: stri
 }
 
 export default function Settings() {
-  const { settings, save: saveSettings } = useSettings();
+  const { settings, save: saveSettings, loading } = useSettings();
   const { widgets, saveWidget } = useWidgets();
 
   const [auth, setAuth] = useState<AuthStatus | null>(null);
@@ -62,6 +62,13 @@ export default function Settings() {
     setMessage({ type, text });
     window.setTimeout(() => setMessage(null), 4000);
   }, []);
+
+  // Ensure the form state is initialized from the saved settings exactly once
+  // (after the settings have loaded). Guarding with a ref prevents this effect
+  // from re-running on unrelated changes (e.g. editing the URLs textarea or
+  // toggling an EdenAI value), which would silently discard unsaved selections
+  // such as the auto-rotate interval.
+  const initializedRef = useRef(false);
 
   const loadAuth = useCallback(async () => {
     try {
@@ -84,12 +91,14 @@ export default function Settings() {
     }
   }, [loadAuth, showMessage]);
 
-  // Initialize the URLs textarea from the loaded settings (once).
+  // Initialize the form from the loaded settings (once, after they arrive).
   useEffect(() => {
-    if (settings.monitor_urls?.length && urlsText === '') {
+    if (initializedRef.current || loading) return;
+    initializedRef.current = true;
+    if (settings.monitor_urls?.length) {
       setUrlsText(settings.monitor_urls.join('\n'));
     }
-    if (settings.edenai_display && edenaiValues.length === 0) {
+    if (settings.edenai_display) {
       setEdenaiValues(settings.edenai_display.values);
       setPeriodDays(settings.edenai_display.periodDays || 30);
     }
@@ -105,7 +114,7 @@ export default function Settings() {
     if (settings.auto_rotate_seconds !== undefined) {
       setAutoRotateSeconds(settings.auto_rotate_seconds);
     }
-  }, [settings.monitor_urls, settings.edenai_display, urlsText, edenaiValues.length]);
+  }, [settings, loading]);
 
   // Track whether there are unsaved changes in the monitoring fields.
   const originalUrls = (settings.monitor_urls || []).join('\n').trim();

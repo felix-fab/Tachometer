@@ -22,11 +22,12 @@
   color: var(--muted);
 }
 
-/* Scrollable container for the timeline */
+/* Container for the timeline. Not scrollable — the timeline scales
+   dynamically to fill the available space instead. */
 .timelineWrap {
   flex: 1 1 auto;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
   border: 1px solid var(--panel-border);
   border-radius: 12px;
   background: var(--input-bg);
@@ -37,13 +38,14 @@
 
 /* The day timeline: 07:00 at the top, 24:00 at the bottom.
    Fills the available panel height so it always scales to the
-   screen size. */
+   screen size. Uses flex-basis 0 + grow so it reliably takes up
+   exactly the remaining space (absolute-positioned children do not
+   contribute to height, so height:auto would collapse). */
 .timeline {
   position: relative;
-  flex: 1 1 auto;
-  height: auto;
-  min-height: 200px;
-  padding-bottom: 24px;
+  flex: 1 1 0%;
+  min-height: 0;
+  box-sizing: border-box;
 }
 
 /* The single timeline lane, right of the time gutter. */
@@ -78,6 +80,18 @@
   padding: 0.1rem 0.25rem;
   border-radius: 4px;
   white-space: nowrap;
+}
+
+/* Keep the first (07:00) and last (24:00) labels fully visible at the
+   timeline edges instead of being clipped by translateY(-50%). */
+.hourMarkFirst .hourLabel {
+  top: 0;
+  transform: none;
+}
+
+.hourMarkLast .hourLabel {
+  top: 0;
+  transform: translateY(-100%);
 }
 
 /* On short screens the hourly labels would overlap, so only label every
@@ -181,27 +195,6 @@
   border-top: 2px solid var(--danger);
   z-index: 2;
   pointer-events: none;
-}
-
-.nowDot {
-  position: absolute;
-  left: -3px;
-  top: -4px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--danger);
-  animation: nowPulse 2s ease-in-out infinite;
-}
-
-@keyframes nowPulse {
-  0%,
-  100% {
-    box-shadow: 0 0 4px var(--danger);
-  }
-  50% {
-    box-shadow: 0 0 10px 3px var(--danger);
-  }
 }
 
 .nowLabel {
