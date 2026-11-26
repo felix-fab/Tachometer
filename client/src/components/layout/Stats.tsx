@@ -34,27 +34,21 @@ function hostOf(url: string): string {
   }
 }
 
-/** The site's origin (protocol + host), e.g. "https://example.com". */
-function originOf(url: string): string {
-  try {
-    const u = new URL(url);
-    return u.origin || url;
-  } catch {
-    return url;
-  }
-}
-
 /**
- * Website favicon with a fallback chain: load the site's own /favicon.ico
- * first (more reliable for custom domains), then fall back to Google's
- * favicon service, then hide the image entirely.
+ * Website favicon. Uses the favicon URL resolved by the server (the actual
+ * icon declared in the site's HTML), falling back to Google's favicon service
+ * and then hiding the image entirely.
  */
-function SiteIcon({ url }: { url: string }) {
-  const origin = originOf(url);
-  const fallback = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(
+function SiteIcon({ iconUrl, url }: { iconUrl?: string | null; url: string }) {
+  const googleFallback = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(
     hostOf(url)
   )}&sz=64`;
-  const [src, setSrc] = useState(`${origin}/favicon.ico`);
+  const initial = iconUrl || googleFallback;
+  const [src, setSrc] = useState(initial);
+  // Keep in sync if the resolved icon changes (e.g. after a data refresh).
+  useEffect(() => {
+    setSrc(iconUrl || googleFallback);
+  }, [iconUrl, googleFallback]);
 
   return (
     <img
@@ -64,7 +58,7 @@ function SiteIcon({ url }: { url: string }) {
       width={20}
       height={20}
       onError={() => {
-        if (src !== fallback) setSrc(fallback);
+        if (src === iconUrl && iconUrl) setSrc(googleFallback);
         else setSrc('');
       }}
       style={src === '' ? { display: 'none' } : undefined}
@@ -199,7 +193,7 @@ export default function Stats() {
                       data-reachable={w.reachable}
                     >
                       <span className={styles.websiteIcon}>
-                        <SiteIcon url={w.url} />
+                        <SiteIcon iconUrl={w.iconUrl} url={w.url} />
                       </span>
                       <span className={styles.websiteInfo}>
                         <span className={styles.websiteTitle}>

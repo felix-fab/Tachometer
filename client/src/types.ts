@@ -112,6 +112,8 @@ export interface WebsiteProbe {
   reachable: boolean;
   status: number | null;
   latencyMs: number;
+  /** Absolute favicon URL resolved by the server (may be null). */
+  iconUrl?: string | null;
   error?: string;
 }
 

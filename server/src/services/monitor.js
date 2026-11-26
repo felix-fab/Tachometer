@@ -203,6 +203,56 @@ export async function getEdenaiBalance() {
 }
 
 /**
+ * Extract a favicon URL from a site's HTML. Prefers a declared
+ * <link rel="icon" …>; falls back to the site's /favicon.ico. Always returns
+ * an absolute URL (resolved against the page URL).
+ */
+function resolveIconUrl(html, pageUrl) {
+  let baseUrl = pageUrl;
+  const baseMatch = /<base[^>]+href=["']([^"']+)["']/i.exec(html);
+  if (baseMatch) {
+    try {
+      baseUrl = new URL(baseMatch[1], pageUrl).href;
+    } catch {
+      /* keep pageUrl */
+    }
+  }
+
+  // Prefer the highest-quality declared icon (largest sizes first).
+  const icons = [];
+  const linkRe = /<link[^>]+rel=["'][^"']*icon[^"']*["'][^>]*>/gi;
+  let match;
+  while ((match = linkRe.exec(html)) !== null) {
+    const tag = match[0];
+    const hrefMatch = /href=["']([^"']+)["']/i.exec(tag);
+    if (!hrefMatch) continue;
+    let sizes = 0;
+    const sizeMatch = /sizes=["']([^"']+)["']/i.exec(tag);
+    if (sizeMatch) {
+      const firstSize = sizeMatch[1].split(/\s+/)[0];
+      const dims = /^(\d+)x\d+$/i.exec(firstSize);
+      if (dims) sizes = Number(dims[1]);
+    }
+    try {
+      icons.push({ href: new URL(hrefMatch[1], baseUrl).href, sizes });
+    } catch {
+      /* skip invalid */
+    }
+  }
+  if (icons.length > 0) {
+    icons.sort((a, b) => b.sizes - a.sizes);
+    return icons[0].href;
+  }
+
+  // No declared icon → conventional /favicon.ico location.
+  try {
+    return new URL('/favicon.ico', pageUrl).href;
+  } catch {
+    return pageUrl;
+  }
+}
+
+/**
  * Probe a single URL and return its reachability status.
  * A reachable site responds with a 2xx/3xx status; anything else is flagged.
  * @param {{ title: string, url: string }} site
@@ -218,12 +268,27 @@ async function probeUrl(site) {
       signal: AbortSignal.timeout(10_000),
     });
     const latencyMs = Date.now() - startedAt;
+
+    let iconUrl = null;
+    if (res.ok || res.status < 400) {
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('text/html')) {
+        try {
+          const html = await res.text();
+          iconUrl = resolveIconUrl(html, res.url || url);
+        } catch {
+          iconUrl = null;
+        }
+      }
+    }
+
     return {
       title,
       url,
       reachable: res.ok || res.status < 400,
       status: res.status,
       latencyMs,
+      iconUrl,
     };
   } catch (err) {
     return {
